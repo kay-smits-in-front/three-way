@@ -1,11 +1,4 @@
-"""Keyword list used to classify news. Target: 100 entries.
+"""Keyword lists used to classify news. Target: 100 keywords in total."""
 
-Positive value = bullish, negative value = bearish.
-"""
-
-KEYWORDS: dict[str, int] = {
-    "tech": 1,
-    "quantum": 1,
-    "vastgoed stijgt": 1,
-    # TODO: fill up to 100
-}
+POSITIVE: list[str] = []
+NEGATIVE: list[str] = []
