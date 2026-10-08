@@ -1,4 +1,4 @@
-from datetime import date
+from imports import date
 
 
 def fetch_price_history(ticker: str, end: date, days: int) -> list[float]:

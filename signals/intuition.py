@@ -1,7 +1,5 @@
-import json
-from pathlib import Path
-
-INTUITION_FILE = Path("data/intuition.json")
+from constants import INTUITION_FILE
+from imports import json
 
 
 def load_intuition() -> dict[str, float]:

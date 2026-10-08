@@ -1,4 +1,4 @@
-from datetime import date
+from imports import date
 
 
 def scrape_nu_nl_finance(day: date) -> list[str]:

@@ -1,4 +1,4 @@
-from datetime import date
+from imports import date
 
 
 def load_history(start: date, end: date) -> dict[str, list[float]]:

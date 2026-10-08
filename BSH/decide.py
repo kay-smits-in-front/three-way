@@ -1,4 +1,4 @@
-from enum import StrEnum
+from imports import StrEnum
 
 
 class Action(StrEnum):
