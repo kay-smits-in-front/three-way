@@ -1,12 +1,5 @@
 from datetime import date
 
-from BSH import Action, decide
-from signals import analysis_score, detect_spike, fetch_price_history
-from signals import combine_scores
-from signals import intuition_score
-from signals import news_score
-from tracker import fetch_positions
-from tracker import Position, portfolio_value
 
 
 def evaluate_position(position: Position, day: date) -> Action:
