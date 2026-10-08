@@ -1,1 +1,2 @@
 degiro-connector
+yfinance
