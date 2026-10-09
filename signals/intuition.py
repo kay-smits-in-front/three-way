@@ -1,4 +1,4 @@
-from constants import INTUITION_FILE
+from constants import SENTIMENT_FILE
 from imports import date, dataclass, json, timedelta
 
 
@@ -10,9 +10,9 @@ class IntuitionEntry:
 
 
 def load_entries() -> list[IntuitionEntry]:
-    if not INTUITION_FILE.exists():
+    if not SENTIMENT_FILE.exists():
         return []
-    raw = json.loads(INTUITION_FILE.read_text())
+    raw = json.loads(SENTIMENT_FILE.read_text())
     return [
         IntuitionEntry(date.fromisoformat(e["day"]), e["score"], e.get("text", ""))
         for e in raw
@@ -21,8 +21,8 @@ def load_entries() -> list[IntuitionEntry]:
 
 def save_entries(entries: list[IntuitionEntry]) -> None:
     raw = [{"day": e.day.isoformat(), "score": e.score, "text": e.text} for e in entries]
-    INTUITION_FILE.parent.mkdir(parents=True, exist_ok=True)
-    INTUITION_FILE.write_text(json.dumps(raw, indent=2))
+    SENTIMENT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SENTIMENT_FILE.write_text(json.dumps(raw, indent=2))
 
 
 def validate_score(score: float) -> float:

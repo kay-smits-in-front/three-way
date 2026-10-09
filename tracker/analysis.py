@@ -3,16 +3,6 @@ from imports import date
 # ---------------------------------------------------------------- data
 
 
-def fetch_price_history(ticker: str, end: date, days: int) -> list[float]:
-    """Daily closing prices."""
-    raise NotImplementedError
-
-
-def fetch_volume_history(ticker: str, end: date, days: int) -> list[float]:
-    """Daily traded volume."""
-    raise NotImplementedError
-
-
 def fetch_company_ratios(ticker: str) -> dict[str, float]:
     """Fundamental figures (P/E, free cash flow yield, earnings growth, debt)."""
     raise NotImplementedError

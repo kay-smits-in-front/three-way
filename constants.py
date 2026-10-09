@@ -11,10 +11,14 @@ WEIGHT_ANALYSIS = 0.3
 SPIKE_THRESHOLD_PCT = 10.0
 SPIKE_WINDOW_DAYS = 2
 
+# Backcast window in calendar days (about 3 months)
+BACKCAST_DAYS = 92
+
 # Decision thresholds
-BUY_THRESHOLD = 5.0
-SELL_THRESHOLD = 5.0
+BUY_THRESHOLD = 10.0
+SELL_THRESHOLD = 3.0
 
 # Files
-INTUITION_FILE = Path("data/intuition.json")
+SENTIMENT_FILE = Path("data/sentiment.json")
 HOLDINGS_FILE = Path("data/holdings.json")
+SNAPSHOT_FILE = Path("data/snapshots.json")

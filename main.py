@@ -1,11 +1,13 @@
 from imports import date
 
 from BSH.decide import Action, decide
-from signals.analysis import analysis_score, detect_spike, fetch_price_history
+from tracker.analysis import analysis_score, detect_spike
 from signals.combine import combine_scores
 from signals.intuition import intuition_score
 from signals.news import news_score
-from tracker.portfolio import Position, fetch_positions, portfolio_value
+from tracker.history import fetch_price_history
+from tracker.portfolio import Position
+from tracker.report import print_report
 
 
 def evaluate_position(position: Position, day: date) -> Action:
@@ -19,11 +21,7 @@ def evaluate_position(position: Position, day: date) -> Action:
 
 
 def main() -> None:
-    today = date.today()
-    positions = fetch_positions()
-    print(f"Portfolio value: {portfolio_value(positions):.2f}")
-    for position in positions:
-        print(f"{position.ticker}: {evaluate_position(position, today)}")
+    print_report()
 
 
 if __name__ == "__main__":
