@@ -1,0 +1,276 @@
+{
+  "as_of": "2026-10-08",
+  "source": "DEGIRO overview, entered by hand",
+  "holdings": [
+    {
+      "ticker": "ALTO",
+      "name": "Alto Ingredients",
+      "isin": "US0215131063",
+      "exchange": "NDQ",
+      "quantity": 10,
+      "buy_price": 4.8,
+      "buy_currency": "USD",
+      "cost_eur": 41.12,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 3.73,
+        "currency": "USD",
+        "value_eur": 33.27,
+        "result_eur": -7.85,
+        "result_pct": -19.1
+      }
+    },
+    {
+      "ticker": "ARQQ",
+      "name": "Arqit Quantum",
+      "isin": "KYG0567U1278",
+      "exchange": "NDQ",
+      "quantity": 15,
+      "buy_price": 14.16,
+      "buy_currency": "USD",
+      "cost_eur": 182.97,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 18.43,
+        "currency": "USD",
+        "value_eur": 246.6,
+        "result_eur": 63.63,
+        "result_pct": 34.78
+      }
+    },
+    {
+      "ticker": "BRN.AX",
+      "name": "Brainchip Holdings",
+      "isin": "AU000000BRN8",
+      "exchange": "ASX",
+      "quantity": 100,
+      "buy_price": 0.23,
+      "buy_currency": "AUD",
+      "cost_eur": 13.83,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 0.13,
+        "currency": "AUD",
+        "value_eur": 8.09,
+        "result_eur": -5.74,
+        "result_pct": -41.52
+      }
+    },
+    {
+      "ticker": "QBTS",
+      "name": "D-Wave Quantum",
+      "isin": "US26740W1099",
+      "exchange": "NDQ",
+      "quantity": 25,
+      "buy_price": 19.505,
+      "buy_currency": "USD",
+      "cost_eur": 428.23,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 14.6,
+        "currency": "USD",
+        "value_eur": 325.59,
+        "result_eur": -102.64,
+        "result_pct": -23.96
+      }
+    },
+    {
+      "ticker": "DOCS",
+      "name": "Doximity Class A",
+      "isin": "US26622P1075",
+      "exchange": "NSY",
+      "quantity": 15,
+      "buy_price": 21.55,
+      "buy_currency": "USD",
+      "cost_eur": 278.48,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 29.475,
+        "currency": "USD",
+        "value_eur": 394.39,
+        "result_eur": 115.91,
+        "result_pct": 41.62
+      }
+    },
+    {
+      "ticker": "ALDRV.PA",
+      "name": "Drone Volt",
+      "isin": "FR001400SVN0",
+      "exchange": "EPA",
+      "quantity": 200,
+      "buy_price": 0.529,
+      "buy_currency": "EUR",
+      "cost_eur": 105.8,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 0.278,
+        "currency": "EUR",
+        "value_eur": 55.6,
+        "result_eur": -50.2,
+        "result_pct": -47.44
+      }
+    },
+    {
+      "ticker": "MRAM",
+      "name": "Everspin Technologies",
+      "isin": "US30041T1043",
+      "exchange": "NDQ",
+      "quantity": 9,
+      "buy_price": 10.26,
+      "buy_currency": "USD",
+      "cost_eur": 79.14,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 16.54,
+        "currency": "USD",
+        "value_eur": 132.79,
+        "result_eur": 53.65,
+        "result_pct": 67.81
+      }
+    },
+    {
+      "ticker": "HYLN",
+      "name": "Hyliion Holdings",
+      "isin": "US4491091074",
+      "exchange": "ASE",
+      "quantity": 13,
+      "buy_price": 3.91,
+      "buy_currency": "USD",
+      "cost_eur": 44.16,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 3.77,
+        "currency": "USD",
+        "value_eur": 43.72,
+        "result_eur": -0.44,
+        "result_pct": -1.01
+      }
+    },
+    {
+      "ticker": "IONQ",
+      "name": "IonQ",
+      "isin": "US46222L1089",
+      "exchange": "NSY",
+      "quantity": 1,
+      "buy_price": 35.7567,
+      "buy_currency": "USD",
+      "cost_eur": 31.01,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 39.47,
+        "currency": "USD",
+        "value_eur": 35.21,
+        "result_eur": 4.2,
+        "result_pct": 13.54
+      }
+    },
+    {
+      "ticker": "MIH.F",
+      "name": "Mitsubishi Heavy Industries",
+      "isin": "JP3900000005",
+      "exchange": "TDG",
+      "quantity": 1,
+      "buy_price": 13.568,
+      "buy_currency": "EUR",
+      "cost_eur": 13.57,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 20.99,
+        "currency": "EUR",
+        "value_eur": 20.99,
+        "result_eur": 7.42,
+        "result_pct": 54.7
+      }
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA",
+      "isin": "US67066G1040",
+      "exchange": "NDQ",
+      "quantity": 3,
+      "buy_price": 124.199866,
+      "buy_currency": "USD",
+      "cost_eur": 349.13,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 230.36,
+        "currency": "USD",
+        "value_eur": 616.46,
+        "result_eur": 267.33,
+        "result_pct": 76.57
+      }
+    },
+    {
+      "ticker": "RDW",
+      "name": "Redwire",
+      "isin": "US75776W1036",
+      "exchange": "NSY",
+      "quantity": 18,
+      "buy_price": 16.12,
+      "buy_currency": "USD",
+      "cost_eur": 252.53,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 9.76,
+        "currency": "USD",
+        "value_eur": 156.71,
+        "result_eur": -95.82,
+        "result_pct": -37.94
+      }
+    },
+    {
+      "ticker": "RGTI",
+      "name": "Rigetti Computing",
+      "isin": "US76655K1034",
+      "exchange": "NDQ",
+      "quantity": 70,
+      "buy_price": 14.576428,
+      "buy_currency": "USD",
+      "cost_eur": 948.39,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 14.14,
+        "currency": "USD",
+        "value_eur": 882.93,
+        "result_eur": -65.46,
+        "result_pct": -6.9
+      }
+    },
+    {
+      "ticker": "LAES",
+      "name": "SEALSQ",
+      "isin": "VGG794831062",
+      "exchange": "NDQ",
+      "quantity": 100,
+      "buy_price": 2.77,
+      "buy_currency": "USD",
+      "cost_eur": 256.06,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 2.25,
+        "currency": "USD",
+        "value_eur": 200.71,
+        "result_eur": -55.35,
+        "result_pct": -21.61
+      }
+    },
+    {
+      "ticker": "SPCX",
+      "name": "Space Exploration Technologies Class A",
+      "isin": "US84615Q1031",
+      "exchange": "NDQ",
+      "quantity": 9,
+      "buy_price": 214.387777,
+      "buy_currency": "USD",
+      "cost_eur": 1668.76,
+      "snapshot": {
+        "date": "2026-10-08",
+        "price": 160.625,
+        "currency": "USD",
+        "value_eur": 1289.53,
+        "result_eur": -379.23,
+        "result_pct": -22.72
+      }
+    }
+  ]
+}

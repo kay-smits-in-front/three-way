@@ -12,17 +12,9 @@ SPIKE_THRESHOLD_PCT = 10.0
 SPIKE_WINDOW_DAYS = 2
 
 # Decision thresholds
-BUY_THRESHOLD = 0.0   # TODO: decide
-SELL_THRESHOLD = 0.0  # TODO: decide
+BUY_THRESHOLD = 5.0
+SELL_THRESHOLD = 5.0
 
 # Files
 INTUITION_FILE = Path("data/intuition.json")
-
-# DEGIRO: names of the environment variables holding the credentials
-ENV_DEGIRO_USERNAME = "DEGIRO_USERNAME"
-ENV_DEGIRO_PASSWORD = "DEGIRO_PASSWORD"
-ENV_DEGIRO_INT_ACCOUNT = "DEGIRO_INT_ACCOUNT"      # optional
-ENV_DEGIRO_TOTP_SECRET = "DEGIRO_TOTP_SECRET_KEY"  # only if 2FA is enabled
-
-# DEGIRO portfolio rows
-POSITION_TYPE_PRODUCT = "PRODUCT"
+HOLDINGS_FILE = Path("data/holdings.json")

@@ -5,14 +5,13 @@ from signals.analysis import analysis_score, detect_spike, fetch_price_history
 from signals.combine import combine_scores
 from signals.intuition import intuition_score
 from signals.news import news_score
-from tracker.degiro import fetch_positions
-from tracker.portfolio import Position, portfolio_value
+from tracker.portfolio import Position, fetch_positions, portfolio_value
 
 
 def evaluate_position(position: Position, day: date) -> Action:
     score = combine_scores(
         news=news_score(position.ticker, day),
-        intuition=intuition_score(position.ticker),
+        intuition=intuition_score(day),
         analysis=analysis_score(position.ticker, day),
     )
     spike = detect_spike(fetch_price_history(position.ticker, day, days=5))
