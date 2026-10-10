@@ -1,7 +1,7 @@
 """Weekly update: python weekly.py"""
 
 from imports import date
-from tracker.forecasts import collect_forecasts, format_table, save_weekly
+from signals.forecasts import collect_forecasts, format_table, save_weekly
 
 
 def main() -> None:

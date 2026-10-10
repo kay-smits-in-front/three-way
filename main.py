@@ -1,7 +1,7 @@
 from imports import date
 
 from BSH.decide import Action, decide
-from tracker.analysis import analysis_score, detect_spike
+from signals.analysis import analysis_score, detect_spike
 from signals.combine import combine_scores
 from signals.intuition import describe_sentiment, intuition_score
 from signals.news import news_score
