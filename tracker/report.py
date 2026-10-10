@@ -59,10 +59,10 @@ def format_line(
     label: str, qty: str, price: str, cost: float, value: float, change: str = "-"
 ) -> str:
     result = value - cost
-    pct = result / cost * 100
+    pct = f"{result / cost:+.1f}%" if cost != 0 else "-"
     return (
         f"{label:<10}{qty:>7}{price:>14}"
-        f"{cost:>12,.2f}{value:>12,.2f}{result:>+12,.2f}{pct:>+9.1f}%"
+        f"{cost:>12,.2f}{value:>12,.2f}{result:>+12,.2f}{pct:>10}"
         f"{change:>11}"
     )
 
@@ -101,6 +101,9 @@ def format_total(rows: list[ReportRow], previous: dict[str, float]) -> str:
 def format_table(rows: list[ReportRow], previous: dict[str, float]) -> str:
     header = format_header()
     lines = [header, "-" * len(header)]
+    if not rows:
+        lines.append("Geen koersgegevens beschikbaar; totaal niet berekend.")
+        return "\n".join(lines)
     lines += [format_row(r, previous) for r in rows]
     lines += ["-" * len(header), format_total(rows, previous)]
     return "\n".join(lines)
@@ -118,6 +121,7 @@ def print_report(day: date | None = None) -> None:
     print(format_table(rows, previous))
     if previous_day:
         print(f"\nKolom 'Vorige': verandering sinds {previous_day}")
-    save_snapshot(day, current_values(rows))
+    if rows:
+        save_snapshot(day, current_values(rows))
     if failed:
         print(f"\nGeen koers van Yahoo voor: {', '.join(failed)}")
