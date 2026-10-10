@@ -1,11 +1,11 @@
-from constants import SENTIMENT_FILE
-from imports import date, dataclass, json, timedelta
+from constants import SCORE_MAX, SENTIMENT_FILE
+from imports import dataclass, date, json, timedelta
 
 
 @dataclass(frozen=True)
 class IntuitionEntry:
     day: date
-    score: float  # 0 = very bad market, 10 = positive (green) market
+    score: float  # -5 = very bad market, +5 = positive (green) market
     text: str = ""
 
 
@@ -26,8 +26,8 @@ def save_entries(entries: list[IntuitionEntry]) -> None:
 
 
 def validate_score(score: float) -> float:
-    if not 0 <= score <= 10:
-        raise ValueError(f"Score must be between 0 and 10, got {score}")
+    if not -SCORE_MAX <= score <= SCORE_MAX:
+        raise ValueError(f"Score must be between -5 and +5, got {score:g}")
     return score
 
 
@@ -36,11 +36,6 @@ def add_entry(entry: IntuitionEntry) -> None:
     validate_score(entry.score)
     others = [e for e in load_entries() if e.day != entry.day]
     save_entries(sorted(others + [entry], key=lambda e: e.day))
-
-
-def sentiment_from_text(text: str) -> float:
-    """Ask the Claude API to rate the text as a market sentiment from 0 to 10."""
-    raise NotImplementedError
 
 
 def find_latest_entry(
@@ -52,23 +47,46 @@ def find_latest_entry(
     return max(valid, key=lambda e: e.day, default=None)
 
 
-def scale_to_signal(score: float) -> float:
-    """Map 0-10 to -1..1, where 5 is neutral."""
-    return (score - 5) / 5
-
-
 def intuition_score(day: date) -> float:
-    """Market-wide intuition signal for a day. Neutral (0.0) if there is no valid entry."""
+    """Market-wide intuition for a day, -5 to +5. Neutral (0) without a valid entry."""
     entry = find_latest_entry(load_entries(), day)
-    return 0.0 if entry is None else scale_to_signal(entry.score)
+    return 0.0 if entry is None else entry.score
 
 
 def describe_sentiment(day: date) -> str:
-    """One line for the report: current sentiment and its signal."""
+    """One line for the report: the current intuition."""
     entry = find_latest_entry(load_entries(), day)
     if entry is None:
-        return "Sentiment: geen geldige invoer (neutraal)"
-    return (
-        f"Sentiment: {entry.score:g}/10 van {entry.day} "
-        f"(signaal {scale_to_signal(entry.score):+.2f})"
-    )
+        return "Intuitie: geen geldige invoer (neutraal, 0)"
+    return f"Intuitie: {entry.score:+g} van {entry.day}"
+
+
+def parse_intuition_input(text: str, default: float) -> float:
+    """Typed answer to a score. Empty gives the default, a comma works as a point."""
+    cleaned = text.strip().replace(",", ".")
+    if cleaned == "":
+        return default
+    return validate_score(float(cleaned))
+
+
+def read_answer(prompt: str) -> str:
+    """One line from the terminal. No terminal input counts as an empty answer."""
+    try:
+        return input(prompt)
+    except EOFError:
+        return ""
+
+
+def ask_intuition(day: date) -> float:
+    """Ask for this week's intuition in the terminal, save it, return it.
+    Enter keeps the last valid value (0 if there is none)."""
+    default = intuition_score(day)
+    prompt = f"Jouw intuitie voor de markt, -5 tot +5 (Enter = {default:+g}): "
+    while True:
+        try:
+            score = parse_intuition_input(read_answer(prompt), default)
+            break
+        except ValueError:
+            print("Typ een getal tussen -5 en +5, bijvoorbeeld 3 of -2,5.")
+    add_entry(IntuitionEntry(day, score))
+    return score
