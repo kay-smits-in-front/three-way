@@ -61,3 +61,14 @@ def intuition_score(day: date) -> float:
     """Market-wide intuition signal for a day. Neutral (0.0) if there is no valid entry."""
     entry = find_latest_entry(load_entries(), day)
     return 0.0 if entry is None else scale_to_signal(entry.score)
+
+
+def describe_sentiment(day: date) -> str:
+    """One line for the report: current sentiment and its signal."""
+    entry = find_latest_entry(load_entries(), day)
+    if entry is None:
+        return "Sentiment: geen geldige invoer (neutraal)"
+    return (
+        f"Sentiment: {entry.score:g}/10 van {entry.day} "
+        f"(signaal {scale_to_signal(entry.score):+.2f})"
+    )

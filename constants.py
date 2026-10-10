@@ -22,3 +22,8 @@ SELL_THRESHOLD = 3.0
 SENTIMENT_FILE = Path("data/sentiment.json")
 HOLDINGS_FILE = Path("data/holdings.json")
 SNAPSHOT_FILE = Path("data/snapshots.json")
+WEEKLY_FILE = Path("data/weekly_info.json")
+
+# Analyst forecasts (Yahoo)
+MIN_ANALYSTS = 3            # fewer analysts: no score (pennystocks drop out)
+UPSIDE_FULL_SCORE_PCT = 50.0  # price target this far above the price = score +5

@@ -3,7 +3,7 @@ from imports import date
 from BSH.decide import Action, decide
 from tracker.analysis import analysis_score, detect_spike
 from signals.combine import combine_scores
-from signals.intuition import intuition_score
+from signals.intuition import describe_sentiment, intuition_score
 from signals.news import news_score
 from tracker.history import fetch_price_history
 from tracker.portfolio import Position
@@ -21,6 +21,8 @@ def evaluate_position(position: Position, day: date) -> Action:
 
 
 def main() -> None:
+    print(describe_sentiment(date.today()))
+    print()
     print_report()
 
 
