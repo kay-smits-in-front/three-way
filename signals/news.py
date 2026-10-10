@@ -94,9 +94,14 @@ def merge_headlines(stored: list[Headline], new: list[Headline]) -> list[Headlin
 def load_headlines() -> list[Headline]:
     if not NEWS_FILE.exists():
         return []
+
+    content = NEWS_FILE.read_text(encoding="utf-8").strip()
+    if not content:
+        return []
+
     return [
         Headline(date.fromisoformat(h["day"]), h["title"], h["summary"], h["link"])
-        for h in json.loads(NEWS_FILE.read_text())
+        for h in json.loads(content)
     ]
 
 
@@ -106,7 +111,10 @@ def save_headlines(headlines: list[Headline]) -> None:
         for h in headlines
     ]
     NEWS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    NEWS_FILE.write_text(json.dumps(raw, indent=2, ensure_ascii=False))
+    NEWS_FILE.write_text(
+        json.dumps(raw, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
 
 def update_headlines() -> tuple[int, list[str]]:
