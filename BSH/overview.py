@@ -12,11 +12,15 @@ class DecisionRow:
     intuition: float
 
     @property
-    def total(self) -> float:
+    def total(self) -> float | None:
+        if not self.analysis.has_data:
+            return None
         return combine_scores(self.news, self.intuition, self.analysis.score)
 
     @property
     def action(self) -> Action:
+        if self.total is None:
+            return Action.HOLD
         return decide(self.total)
 
 
