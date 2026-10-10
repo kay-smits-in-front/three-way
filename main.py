@@ -41,7 +41,7 @@ def main() -> None:
     news = ask_news_score()
     print()
     intuition = ask_intuition(day)
-    print("\\nFinanciele analyse per aandeel (Yahoo), dit duurt even:")
+    print("\nFinanciele analyse per aandeel (Yahoo), dit duurt even:")
     analyses = analyse_all(day)
     rows = [DecisionRow(a, news, intuition) for a in analyses]
     print()
