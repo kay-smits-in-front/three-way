@@ -1,5 +1,14 @@
-from constants import BACKCAST_DAYS
-from imports import dataclass, date, timedelta
+from constants import (
+    BACKCAST_DAYS,
+    GRID_DOWN_PCT,
+    GRID_LOOKBACK_DAYS,
+    GRID_MONTH_WEIGHT,
+    GRID_REVIEW_DAYS,
+    GRID_UP_PCT,
+    STRATEGY_HISTORY_DAYS,
+)
+from imports import dataclass, date, product, timedelta
+from signals.contrarian import Params
 from tracker.history import Candle, fetch_candles, weekly_candles
 from tracker.holdings import load_holdings
 from tracker.prices import fetch_currency, fetch_fx_to_eur
@@ -106,6 +115,52 @@ def format_table(rows: list[BackcastRow]) -> str:
         )
     )
     return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class StockData:
+    ticker: str
+    closes: list[float]
+    position_eur: float  # current quantity at the price of the first day, in EUR
+
+
+def load_stock_data() -> tuple[list[StockData], list[str]]:
+    """Two years of daily closes per holding, plus tickers that failed."""
+    end = date.today()
+    start = end - timedelta(days=STRATEGY_HISTORY_DAYS)
+    stocks, failed = [], []
+    for ticker, quantity in load_holdings().items():
+        try:
+            closes = [c.close for c in fetch_candles(ticker, start, end)]
+            fx = fetch_fx_to_eur(fetch_currency(ticker))
+            stocks.append(StockData(ticker, closes, quantity * closes[0] * fx))
+        except Exception:
+            failed.append(ticker)
+    return stocks, failed
+
+
+def all_params(
+    up_grid: tuple[float, ...] = GRID_UP_PCT,
+    down_grid: tuple[float, ...] = GRID_DOWN_PCT,
+) -> list[Params]:
+    return [
+        Params(lookback, up, down, weight, review)
+        for lookback, up, down, weight, review in product(
+            GRID_LOOKBACK_DAYS,
+            up_grid,
+            down_grid,
+            GRID_MONTH_WEIGHT,
+            GRID_REVIEW_DAYS,
+        )
+    ]
+
+
+def format_params(params: Params) -> str:
+    return (
+        f"kijk {params.lookback_days} dagen terug, verkoop bij +{params.up_pct:.0f}%, "
+        f"koop terug bij -{params.down_pct:.0f}%, maandweging {params.month_weight}, "
+        f"controle elke {params.review_days} handelsdagen"
+    )
 
 
 def print_backcast() -> None:

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from enum import StrEnum
+from itertools import product
 from pathlib import Path
 from statistics import mean
 from xml.etree import ElementTree
@@ -30,6 +31,7 @@ __all__ = [
     "json",
     "mean",
     "parsedate_to_datetime",
+    "product",
     "re",
     "timedelta",
     "urllib",

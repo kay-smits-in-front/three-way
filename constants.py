@@ -53,3 +53,31 @@ PE_NEUTRAL = 25.0             # P/E of 25 = score 0, 50 = -5, 0 = +5
 GROWTH_FULL_SCORE_PCT = 25.0  # revenue growth of 25% = score +5
 DEBT_NEUTRAL_PCT = 100.0      # debt/equity of 100% = score 0
 DEBT_PCT_PER_POINT = 40.0     # every 40 points more debt = 1 point lower
+
+# Transaction costs (DEGIRO, about 3 euro per buy or sell)
+TRANSACTION_COST_EUR = 3.0
+COST_COVER_FACTOR = 2.0       # expected move must be this many times the round trip cost
+
+# Contrarian rule: sell after a big rise, buy back after a big fall
+STRATEGY_HISTORY_DAYS = 1825  # five years of daily prices (shorter if the stock is younger)
+MONTH_DAYS = 21               # trading days in a month trend
+MIN_LIMIT_PCT = 1.0           # a buy or sell limit never goes below this
+GRID_LOOKBACK_DAYS = (1, 2, 3, 5, 10)
+GRID_UP_PCT = (3.0, 4.0, 5.0, 8.0, 10.0, 15.0, 20.0)
+GRID_DOWN_PCT = (2.0, 3.0, 4.0, 5.0, 8.0, 10.0, 15.0)
+GRID_MONTH_WEIGHT = (-0.5, -0.25, 0.0, 0.25)  # 0 = ignore the month trend, negative = sell sooner after a good month
+GRID_REVIEW_DAYS = (2, 3, 5)    # check the rule every 3 or 5 trading days
+
+# Walk-forward test: pick settings on the train days, test on the days after
+WF_TRAIN_DAYS = 250           # about one year of trading days
+WF_TEST_DAYS = 42             # about two months of trading days
+
+
+# Stability map: how many test windows a fixed setting beats buy and hold
+STABILITY_TOP = 10            # settings shown
+
+# Winners: a stock that rose this much over the trailing year gets its own, wider limits
+WINNER_LOOKBACK_DAYS = 250
+WINNER_RETURN_PCT = 100.0
+GRID_WINNER_UP_PCT = (20.0, 30.0, 40.0, 50.0)   # sell only after a very big rise
+GRID_WINNER_DOWN_PCT = (2.0, 3.0, 5.0)          # buy back after a small fall
