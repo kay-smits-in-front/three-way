@@ -1,17 +1,10 @@
-from constants import (
-    BACKCAST_DAYS,
-    GRID_DOWN_PCT,
-    GRID_LOOKBACK_DAYS,
-    GRID_MONTH_WEIGHT,
-    GRID_REVIEW_DAYS,
-    GRID_UP_PCT,
-    STRATEGY_HISTORY_DAYS,
-)
-from imports import dataclass, date, product, timedelta
-from signals.contrarian import Params
+from constants import BACKCAST_DAYS, BACKCAST_TRADING_DAYS
+from imports import dataclass, date, timedelta
+from signals.contrarian import HOLD, LIVE
 from tracker.history import Candle, fetch_candles, weekly_candles
 from tracker.holdings import load_holdings
 from tracker.prices import fetch_currency, fetch_fx_to_eur
+from walkforward import StockData, load_stock_data, start_value, stock_return
 
 
 @dataclass(frozen=True)
@@ -118,49 +111,56 @@ def format_table(rows: list[BackcastRow]) -> str:
 
 
 @dataclass(frozen=True)
-class StockData:
+class RuleRow:
     ticker: str
-    closes: list[float]
-    position_eur: float  # current quantity at the price of the first day, in EUR
+    start_eur: float
+    hold_pct: float
+    rule_pct: float
+    trades: int
 
 
-def load_stock_data() -> tuple[list[StockData], list[str]]:
-    """Two years of daily closes per holding, plus tickers that failed."""
-    end = date.today()
-    start = end - timedelta(days=STRATEGY_HISTORY_DAYS)
-    stocks, failed = [], []
-    for ticker, quantity in load_holdings().items():
-        try:
-            closes = [c.close for c in fetch_candles(ticker, start, end)]
-            fx = fetch_fx_to_eur(fetch_currency(ticker))
-            stocks.append(StockData(ticker, closes, quantity * closes[0] * fx))
-        except Exception:
-            failed.append(ticker)
-    return stocks, failed
+def rule_row(stock: StockData) -> RuleRow | None:
+    """Buy and hold against the live rule over the backcast window, costs included.
+    Winners are only held, so for them both are the same."""
+    hold = stock_return(stock, HOLD, BACKCAST_TRADING_DAYS, 0)
+    rule = stock_return(stock, LIVE, BACKCAST_TRADING_DAYS, 0)
+    if hold is None or rule is None:
+        return None
+    start = start_value(stock, BACKCAST_TRADING_DAYS)
+    return RuleRow(stock.ticker, start, hold[0] / start * 100, rule[0] / start * 100, rule[1])
 
 
-def all_params(
-    up_grid: tuple[float, ...] = GRID_UP_PCT,
-    down_grid: tuple[float, ...] = GRID_DOWN_PCT,
-) -> list[Params]:
-    return [
-        Params(lookback, up, down, weight, review)
-        for lookback, up, down, weight, review in product(
-            GRID_LOOKBACK_DAYS,
-            up_grid,
-            down_grid,
-            GRID_MONTH_WEIGHT,
-            GRID_REVIEW_DAYS,
-        )
-    ]
+def rule_total(rows: list[RuleRow]) -> RuleRow:
+    """Portfolio line, each stock weighted by its start value."""
+    start = sum(r.start_eur for r in rows)
+    hold = sum(r.start_eur * r.hold_pct for r in rows) / start
+    rule = sum(r.start_eur * r.rule_pct for r in rows) / start
+    return RuleRow("TOTAAL", start, hold, rule, sum(r.trades for r in rows))
 
 
-def format_params(params: Params) -> str:
+def format_rule_line(row: RuleRow) -> str:
     return (
-        f"kijk {params.lookback_days} dagen terug, verkoop bij +{params.up_pct:.0f}%, "
-        f"koop terug bij -{params.down_pct:.0f}%, maandweging {params.month_weight}, "
-        f"controle elke {params.review_days} handelsdagen"
+        f"{row.ticker:<10}{row.start_eur:>12,.2f}{row.hold_pct:>+13.1f}%"
+        f"{row.rule_pct:>+10.1f}%{row.rule_pct - row.hold_pct:>+10.1f}pp{row.trades:>8}"
     )
+
+
+def format_rule_table(rows: list[RuleRow]) -> str:
+    header = f"{'Ticker':<10}{'Start EUR':>12}{'Vasthouden':>14}{'Regel':>11}{'Verschil':>12}{'Trans.':>8}"
+    lines = [header, "-" * len(header)]
+    lines += [format_rule_line(r) for r in rows]
+    lines += ["-" * len(header), format_rule_line(rule_total(rows))]
+    return "\n".join(lines)
+
+
+def print_rule_backcast() -> None:
+    stocks, failed = load_stock_data()
+    rows = [row for row in (rule_row(s) for s in stocks) if row is not None]
+    print(f"\nBacktest van de regel in main (LIVE_ in constants.py), laatste {BACKCAST_TRADING_DAYS} handelsdagen")
+    print("Kosten per transactie meegerekend, winnaars alleen vastgehouden")
+    print(format_rule_table(rows))
+    if failed:
+        print(f"\nGeen data van Yahoo voor: {', '.join(failed)}")
 
 
 def print_backcast() -> None:
@@ -173,3 +173,4 @@ def print_backcast() -> None:
 
 if __name__ == "__main__":
     print_backcast()
+    print_rule_backcast()

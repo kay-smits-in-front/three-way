@@ -4,21 +4,79 @@ Settings are picked on a year of days and tested on the two months after it.
 This repeats over the whole history, so the rule is judged on several periods.
 """
 
-from backcasting import StockData, all_params, format_params, load_stock_data
 from constants import (
+    GRID_DOWN_PCT,
+    GRID_LOOKBACK_DAYS,
+    GRID_MONTH_WEIGHT,
+    GRID_REVIEW_DAYS,
+    GRID_UP_PCT,
     GRID_WINNER_DOWN_PCT,
     GRID_WINNER_UP_PCT,
     MONTH_DAYS,
     STABILITY_TOP,
+    STRATEGY_HISTORY_DAYS,
     WF_TEST_DAYS,
     WF_TRAIN_DAYS,
-    WINNER_LOOKBACK_DAYS,
     WINNER_RETURN_PCT,
 )
-from imports import argparse, dataclass
-from signals.contrarian import Params, simulate
+from imports import argparse, dataclass, date, product, timedelta
+from signals.contrarian import HOLD, LIVE, Params, is_winner_at, simulate
+from tracker.history import fetch_candles
+from tracker.holdings import load_holdings
+from tracker.prices import fetch_currency, fetch_fx_to_eur
 
-HOLD = Params(1, 1e9, 1e9, 0.0, 1)  # never sells, so this is buy and hold
+
+@dataclass(frozen=True)
+class StockData:
+    ticker: str
+    closes: list[float]
+    position_eur: float  # current quantity at the price of the first day, in EUR
+
+    @property
+    def now_eur(self) -> float:
+        """Current quantity at the last price, in EUR."""
+        return self.position_eur * self.closes[-1] / self.closes[0]
+
+
+def load_stock_data() -> tuple[list[StockData], list[str]]:
+    """Five years of daily closes per holding, plus tickers that failed."""
+    end = date.today()
+    start = end - timedelta(days=STRATEGY_HISTORY_DAYS)
+    stocks, failed = [], []
+    for ticker, quantity in load_holdings().items():
+        try:
+            closes = [c.close for c in fetch_candles(ticker, start, end)]
+            fx = fetch_fx_to_eur(fetch_currency(ticker))
+            stocks.append(StockData(ticker, closes, quantity * closes[0] * fx))
+        except Exception:
+            failed.append(ticker)
+    return stocks, failed
+
+
+def all_params(
+    up_grid: tuple[float, ...] = GRID_UP_PCT,
+    down_grid: tuple[float, ...] = GRID_DOWN_PCT,
+) -> list[Params]:
+    return [
+        Params(lookback, up, down, weight, review)
+        for lookback, up, down, weight, review in product(
+            GRID_LOOKBACK_DAYS,
+            up_grid,
+            down_grid,
+            GRID_MONTH_WEIGHT,
+            GRID_REVIEW_DAYS,
+        )
+    ]
+
+
+def format_params(params: Params) -> str:
+    return (
+        f"kijk {params.lookback_days} dagen terug, verkoop bij +{params.up_pct:.0f}%, "
+        f"koop terug bij -{params.down_pct:.0f}%, maandweging {params.month_weight}, "
+        f"controle elke {params.review_days} handelsdagen"
+    )
+
+
 
 
 @dataclass(frozen=True)
@@ -146,11 +204,7 @@ def window_bounds(length: int) -> list[tuple[int, int]]:
 
 def is_winner(stock: StockData, start_back: int) -> bool:
     """True if the stock rose WINNER_RETURN_PCT over the year before the window began."""
-    now = len(stock.closes) - 1 - start_back
-    before = now - WINNER_LOOKBACK_DAYS
-    if before < 0:
-        return False
-    return (stock.closes[now] / stock.closes[before] - 1) * 100 >= WINNER_RETURN_PCT
+    return is_winner_at(stock.closes, len(stock.closes) - 1 - start_back)
 
 
 def members_by_window(
@@ -208,30 +262,45 @@ def format_stability(item: Stability) -> str:
     )
 
 
-def per_stock_fixed(
-    stocks: list[StockData], normal: Params, winner: Params
-) -> list[str]:
-    """Per stock over all windows: compounded rule and hold, with the group chosen per window."""
-    bounds = window_bounds(max(len(s.closes) for s in stocks))
+@dataclass(frozen=True)
+class Record:
+    """How a rule did on one stock over all windows, compounded."""
+    rule_pct: float
+    hold_pct: float
+    trades: int
+    winner_windows: int
+
+    @property
+    def excess_pp(self) -> float:
+        return self.rule_pct - self.hold_pct
+
+
+def stock_record(stock: StockData, normal: Params, winner: Params = HOLD) -> Record:
+    """Rule against buy and hold for one stock, with the group chosen per window."""
+    bounds = window_bounds(len(stock.closes))
+    rule, hold, trades, winner_windows = [], [], 0, 0
+    for start, end in bounds:
+        wins_now = is_winner(stock, start)
+        outcome = stock_return(stock, winner if wins_now else normal, start, end)
+        base = stock_return(stock, HOLD, start, end)
+        if outcome is None or base is None:
+            continue
+        first = len(stock.closes) - 1 - start
+        position = stock.position_eur * stock.closes[first] / stock.closes[0]
+        rule.append(outcome[0] / position * 100)
+        hold.append(base[0] / position * 100)
+        trades += outcome[1]
+        winner_windows += wins_now
+    return Record(compound(rule), compound(hold), trades, winner_windows)
+
+
+def per_stock_fixed(stocks: list[StockData], normal: Params, winner: Params) -> list[str]:
     lines = [f"{'Ticker':<10}{'Regel':>10}{'Vasthouden':>13}{'Transacties':>13}{'Winnaar-periodes':>18}"]
     for stock in stocks:
-        rule, hold, trades, winner_windows = [], [], 0, 0
-        for start, end in bounds:
-            wins_now = is_winner(stock, start)
-            params = winner if wins_now else normal
-            outcome = stock_return(stock, params, start, end)
-            base = stock_return(stock, HOLD, start, end)
-            if outcome is None or base is None:
-                continue
-            first = len(stock.closes) - 1 - start
-            position = stock.position_eur * stock.closes[first] / stock.closes[0]
-            rule.append(outcome[0] / position * 100)
-            hold.append(base[0] / position * 100)
-            trades += outcome[1]
-            winner_windows += wins_now
+        record = stock_record(stock, normal, winner)
         lines.append(
-            f"{stock.ticker:<10}{compound(rule):>+9.1f}%{compound(hold):>+12.1f}%"
-            f"{trades:>13}{winner_windows:>18}"
+            f"{stock.ticker:<10}{record.rule_pct:>+9.1f}%{record.hold_pct:>+12.1f}%"
+            f"{record.trades:>13}{record.winner_windows:>18}"
         )
     return lines
 
@@ -246,8 +315,8 @@ def print_stability() -> None:
     print("\n".join(format_stability(item) for item in normal[:STABILITY_TOP]))
     print("\nWinnaars:")
     print("\n".join(format_stability(item) for item in winner[:STABILITY_TOP]))
-    print("\nPer aandeel met de bovenste instelling van elke groep:")
-    print("\n".join(per_stock_fixed(stocks, normal[0].params, winner[0].params)))
+    print("\nPer aandeel met de regel die main gebruikt (winnaars: vasthouden):")
+    print("\n".join(per_stock_fixed(stocks, LIVE, HOLD)))
     if failed:
         print(f"\nGeen data van Yahoo voor: {', '.join(failed)}")
 

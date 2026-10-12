@@ -1,8 +1,7 @@
 """Yahoo analyst forecasts per stock, scored from -5 to +5."""
 
-from constants import MIN_ANALYSTS, UPSIDE_FULL_SCORE_PCT, WEEKLY_FILE
-from imports import date, json, yf
-from tracker.holdings import load_holdings
+from constants import MIN_ANALYSTS, UPSIDE_FULL_SCORE_PCT
+from imports import yf
 
 RATING_WEIGHTS = {"strongBuy": 5.0, "buy": 2.5, "hold": 0.0, "sell": -2.5, "strongSell": -5.0}
 
@@ -62,40 +61,3 @@ def build_forecast(ticker: str) -> dict:
         "upside_pct": round(upside, 1),
         "analysts": analysts,
     }
-
-
-def collect_forecasts() -> dict[str, dict]:
-    return {ticker: build_forecast(ticker) for ticker in load_holdings()}
-
-
-def week_key(day: date) -> str:
-    year, week, _ = day.isocalendar()
-    return f"{year}-W{week:02d}"
-
-
-def load_weekly() -> dict[str, dict]:
-    if not WEEKLY_FILE.exists():
-        return {}
-    return json.loads(WEEKLY_FILE.read_text())
-
-
-def save_weekly(day: date, results: dict[str, dict]) -> None:
-    """Store this week's forecasts. Running twice in a week replaces that week."""
-    weekly = load_weekly()
-    weekly[week_key(day)] = results
-    WEEKLY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    WEEKLY_FILE.write_text(json.dumps(dict(sorted(weekly.items())), indent=2))
-
-
-def format_table(results: dict[str, dict]) -> str:
-    header = f"{'Ticker':<10}{'Analisten':>10}{'Rating':>9}{'Upside':>10}{'Score':>8}"
-    lines = [header, "-" * len(header)]
-    for ticker, r in results.items():
-        if "skipped" in r:
-            lines.append(f"{ticker:<10}{'-':>10}{'-':>9}{'-':>10}{'-':>8}  ({r['skipped']})")
-        else:
-            lines.append(
-                f"{ticker:<10}{r['analysts']:>10}{r['rec_score']:>+9.1f}"
-                f"{r['upside_pct']:>+9.1f}%{r['score']:>+8.1f}"
-            )
-    return "\n".join(lines)

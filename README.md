@@ -15,3 +15,9 @@ Based on three information streems news, financial indicators, and intuiton.
 #### news - daily, weekly monthly -- general, financial, socila media -- 40%
 #### financial indicators -- monthly, yearly, overall -- 40%
 #### intuition -- gut feeling, observations, financial situation -- 20% 
+
+### Gebruik
+Draai `python main.py` op maandag, woensdag en vrijdag. Main vraagt nieuws en intuitie (-5 tot +5),
+laadt koersen en analyse van Yahoo, toont per aandeel het signaal van de contraire regel en de beslissing
+(KOPEN, VERKOPEN of HOUDEN met reden), en bewaart elke check in `data/checks.json`.
+`python walkforward.py` toetst de regel op rollende periodes, `python backcasting.py` toont vasthouden tegen maximum.
