@@ -17,7 +17,15 @@ Based on three information streems news, financial indicators, and intuiton.
 #### intuition -- gut feeling, observations, financial situation -- 20% 
 
 ### Gebruik
-Draai `python main.py` op maandag, woensdag en vrijdag. Main vraagt nieuws en intuitie (-5 tot +5),
-laadt koersen en analyse van Yahoo, toont per aandeel het signaal van de contraire regel en de beslissing
-(KOPEN, VERKOPEN of HOUDEN met reden), en bewaart elke check in `data/checks.json`.
-`python walkforward.py` toetst de regel op rollende periodes, `python backcasting.py` toont vasthouden tegen maximum.
+Elke maandag, woensdag en vrijdag: `python main.py`. Alleen dat.
+Eens per maand (of als main zegt dat de regel oud is): `python walkforward.py`.
+
+| Bestand | Vraag die het beantwoordt | Wanneer |
+|---|---|---|
+| `main.py` | Wat doe ik nu met elk aandeel? | ma, wo, vr |
+| `walkforward.py` | Welke instelling van de regel werkte het beste de afgelopen 5 jaar? Slaat die op in `data/rule.json`. | maandelijks |
+| `backcasting.py` | Hoe had de regel de laatste 3 maanden gedaan, en wat is het maximum? | als je wilt kijken |
+
+Alle drie gebruiken dezelfde regel (`signals/contrarian.py`) met dezelfde instelling (`data/rule.json`),
+dus main toont zelf ook het bewijs van de regel. Nieuws en intuitie (en analyse) zitten alleen in main,
+want daar bestaat geen historie van. Tot er een maand checks in `data/checks.json` staan.

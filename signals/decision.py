@@ -20,7 +20,7 @@ class Action(StrEnum):
 @dataclass(frozen=True)
 class Evidence:
     signal: Signal
-    winner: bool
+    zone: str                       # why the rule says what it says
     worth_trading: bool
     context: float                  # news, intuition and analysis, -5 to +5
     track_excess_pp: float | None   # rule minus buy and hold on this stock, None if unknown
@@ -76,8 +76,8 @@ def veto_reason(evidence: Evidence) -> str | None:
 
 def decide(evidence: Evidence) -> Decision:
     if evidence.signal is Signal.NONE:
-        return Decision(Action.HOLD, "winnaar: vasthouden" if evidence.winner else "geen signaal")
+        return Decision(Action.HOLD, evidence.zone)
     reason = veto_reason(evidence)
     if reason:
         return Decision(Action.HOLD, reason)
-    return Decision(wanted_action(evidence.signal), "regel en context kloppen")
+    return Decision(wanted_action(evidence.signal), evidence.zone)

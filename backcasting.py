@@ -1,9 +1,10 @@
 from constants import BACKCAST_DAYS, BACKCAST_TRADING_DAYS
 from imports import dataclass, date, timedelta
-from signals.contrarian import HOLD, LIVE
+from signals.contrarian import HOLD, Params
 from tracker.history import Candle, fetch_candles, weekly_candles
 from tracker.holdings import load_holdings
 from tracker.prices import fetch_currency, fetch_fx_to_eur
+from tracker.rule import load_rule
 from walkforward import StockData, load_stock_data, start_value, stock_return
 
 
@@ -119,11 +120,11 @@ class RuleRow:
     trades: int
 
 
-def rule_row(stock: StockData) -> RuleRow | None:
+def rule_row(stock: StockData, params: Params) -> RuleRow | None:
     """Buy and hold against the live rule over the backcast window, costs included.
     Winners are only held, so for them both are the same."""
     hold = stock_return(stock, HOLD, BACKCAST_TRADING_DAYS, 0)
-    rule = stock_return(stock, LIVE, BACKCAST_TRADING_DAYS, 0)
+    rule = stock_return(stock, params, BACKCAST_TRADING_DAYS, 0)
     if hold is None or rule is None:
         return None
     start = start_value(stock, BACKCAST_TRADING_DAYS)
@@ -155,8 +156,9 @@ def format_rule_table(rows: list[RuleRow]) -> str:
 
 def print_rule_backcast() -> None:
     stocks, failed = load_stock_data()
-    rows = [row for row in (rule_row(s) for s in stocks) if row is not None]
-    print(f"\nBacktest van de regel in main (LIVE_ in constants.py), laatste {BACKCAST_TRADING_DAYS} handelsdagen")
+    params, _ = load_rule()
+    rows = [row for row in (rule_row(s, params) for s in stocks) if row is not None]
+    print(f"\nBacktest van de regel in main (data/rule.json), laatste {BACKCAST_TRADING_DAYS} handelsdagen")
     print("Kosten per transactie meegerekend, winnaars alleen vastgehouden")
     print(format_rule_table(rows))
     if failed:

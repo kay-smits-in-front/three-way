@@ -20,6 +20,8 @@ HOLDINGS_FILE = Path("data/holdings.json")
 SNAPSHOT_FILE = Path("data/snapshots.json")
 CHECKS_FILE = Path("data/checks.json")
 STATUS_FILE = Path("data/status.json")
+RULE_FILE = Path("data/rule.json")
+RULE_MAX_AGE_DAYS = 35        # main warns when the saved rule is older than this
 
 # Backcast table (hold versus perfect foresight), calendar days
 BACKCAST_DAYS = 92
@@ -39,7 +41,8 @@ DEBT_PCT_PER_POINT = 40.0     # every 40 points more debt = 1 point lower
 TRANSACTION_COST_EUR = 3.0
 COST_COVER_FACTOR = 2.0       # expected move must be this many times the round trip cost
 
-# Rule that main uses. Copy the best setting from `python walkforward.py` here.
+# Start settings of the rule. main uses the setting that `python walkforward.py` saved in
+# data/rule.json, and falls back on these when that file does not exist yet.
 LIVE_LOOKBACK_DAYS = 2        # trading days a rise or fall is measured over
 LIVE_UP_PCT = 5.0             # sell (take profit) after a rise of this much
 LIVE_DOWN_PCT = 10.0          # buy back (when in cash) after a fall of this much

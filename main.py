@@ -3,9 +3,11 @@ from imports import date
 from signals.analysis import Analysis, analyse
 from signals.decision import Action
 from signals.inputs import ask_scores, read_answer
-from signals.overview import StockView, build_view, format_previous, format_table
+from signals.contrarian import Params
+from signals.overview import StockView, build_view, format_evidence, format_previous, format_rule, format_table
 from tracker.checks import Call, Check, add_check, load_checks, previous_check
 from tracker.report import print_report
+from tracker.rule import load_rule
 from tracker.status import load_cash, save_cash
 from walkforward import StockData, load_stock_data
 
@@ -35,9 +37,10 @@ def build_views(
     news: float,
     intuition: float,
     cash: set[str],
+    params: Params,
 ) -> list[StockView]:
     return [
-        build_view(s, analyses[s.ticker], news, intuition, s.ticker not in cash)
+        build_view(s, analyses[s.ticker], news, intuition, s.ticker not in cash, params)
         for s in stocks
     ]
 
@@ -75,7 +78,10 @@ def main() -> None:
     print("\nFinanciele analyse per aandeel (Yahoo), dit duurt even:")
     analyses = analyse_all(stocks)
     cash = load_cash()
-    views = build_views(stocks, analyses, news, intuition, cash)
+    params, chosen = load_rule()
+    views = build_views(stocks, analyses, news, intuition, cash, params)
+    print(f"\n{format_rule(params, chosen, day)}")
+    print(format_evidence(stocks, params))
     print(f"\n{format_previous(previous_check(checks, day), views)}\n")
     print(format_table(views))
     if failed:
