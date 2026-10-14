@@ -1,15 +1,12 @@
-from constants import ACTION_LABELS, CHECK_WEEKDAYS
-from imports import date
-from signals.analysis import Analysis, analyse
-from signals.decision import Action
-from signals.inputs import ask_scores, read_answer
-from signals.contrarian import Params
-from signals.overview import StockView, build_view, format_evidence, format_previous, format_rule, format_table
-from tracker.checks import Call, Check, add_check, load_checks, previous_check
-from tracker.report import print_report
-from tracker.rule import load_rule
-from tracker.status import load_cash, save_cash
-from walkforward import StockData, load_stock_data
+"""The call per stock. Run on Monday, Wednesday and Friday: python main.py"""
+
+from functioning.analysis import Analysis, analyse, ask_scores, read_answer
+from functioning.constants import ACTION_LABELS, CHECK_WEEKDAYS
+from functioning.imports import date
+from functioning.market import StockData, load_stock_data
+from functioning.report import CheckOverview, PortfolioReport, StockView
+from functioning.rule import Action
+from functioning.storage import Call, Check, Cash, Checks, RuleStore
 
 
 def check_title(day: date) -> str:
@@ -19,7 +16,7 @@ def check_title(day: date) -> str:
 
 def last_scores(checks: list[Check], day: date) -> tuple[float, float]:
     """News and intuition of the previous check, or 0 and 0 on the first check."""
-    previous = previous_check(checks, day)
+    previous = Checks.previous(checks, day)
     return (previous.news, previous.intuition) if previous else (0.0, 0.0)
 
 
@@ -29,20 +26,6 @@ def analyse_all(stocks: list[StockData]) -> dict[str, Analysis]:
         print(f"  analyse {stock.ticker} ...")
         analyses[stock.ticker] = analyse(stock.ticker)
     return analyses
-
-
-def build_views(
-    stocks: list[StockData],
-    analyses: dict[str, Analysis],
-    news: float,
-    intuition: float,
-    cash: set[str],
-    params: Params,
-) -> list[StockView]:
-    return [
-        build_view(s, analyses[s.ticker], news, intuition, s.ticker not in cash, params)
-        for s in stocks
-    ]
 
 
 def apply_trade(view: StockView, cash: set[str]) -> set[str]:
@@ -70,27 +53,29 @@ def make_check(day: date, news: float, intuition: float, views: list[StockView])
 
 def main() -> None:
     day = date.today()
-    checks = load_checks()
+    checks_log, cash_status = Checks(), Cash()
+    checks = checks_log.load()
     print(f"=== {check_title(day)} ===\n")
     news, intuition = ask_scores(*last_scores(checks, day))
     print("\nKoersen laden (vijf jaar, per aandeel) ...")
     stocks, failed = load_stock_data()
     print("\nFinanciele analyse per aandeel (Yahoo), dit duurt even:")
     analyses = analyse_all(stocks)
-    cash = load_cash()
-    params, chosen = load_rule()
-    views = build_views(stocks, analyses, news, intuition, cash, params)
-    print(f"\n{format_rule(params, chosen, day)}")
-    print(format_evidence(stocks, params))
-    print(f"\n{format_previous(previous_check(checks, day), views)}\n")
-    print(format_table(views))
+    cash = cash_status.load()
+    rule, chosen = RuleStore().load()
+    overview = CheckOverview(rule, chosen, day)
+    views = overview.views(stocks, analyses, news, intuition, cash)
+    print(f"\n{overview.format_rule()}")
+    print(overview.format_evidence(stocks))
+    print(f"\n{overview.format_previous(Checks.previous(checks, day), views)}\n")
+    print(overview.format_table(views))
     if failed:
         print(f"\nGeen koersdata van Yahoo voor: {', '.join(failed)}")
     print()
-    save_cash(confirm_trades(views, cash))
-    add_check(make_check(day, news, intuition, views))
+    cash_status.save(confirm_trades(views, cash))
+    checks_log.add(make_check(day, news, intuition, views))
     print()
-    print_report()
+    PortfolioReport().print()
 
 
 if __name__ == "__main__":

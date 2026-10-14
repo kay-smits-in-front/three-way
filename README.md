@@ -26,6 +26,22 @@ Eens per maand (of als main zegt dat de regel oud is): `python walkforward.py`.
 | `walkforward.py` | Welke instelling van de regel werkte het beste de afgelopen 5 jaar? Slaat die op in `data/rule.json`. | maandelijks |
 | `backcasting.py` | Hoe had de regel de laatste 3 maanden gedaan, en wat is het maximum? | als je wilt kijken |
 
-Alle drie gebruiken dezelfde regel (`signals/contrarian.py`) met dezelfde instelling (`data/rule.json`),
+De instelling wordt gekozen op het aandeel van periodes van twee maanden waarin de regel beter was dan
+vasthouden. Recente periodes tellen zwaarder: een periode telt half zo zwaar voor elke 6 periodes (ongeveer een jaar)
+die hij verder terug ligt (`RECENCY_HALF_LIFE_WINDOWS` in `constants.py`).
+
+Alle drie gebruiken dezelfde regel (`rule.py`) met dezelfde instelling (`data/rule.json`),
 dus main toont zelf ook het bewijs van de regel. Nieuws en intuitie (en analyse) zitten alleen in main,
 want daar bestaat geen historie van. Tot er een maand checks in `data/checks.json` staan.
+
+### Bestanden
+| Bestand | Inhoud |
+|---|---|
+| `main.py`, `walkforward.py`, `backcasting.py` | De drie scripts |
+| `constants.py`, `imports.py` | Alle constanten, alle imports |
+| `market.py` | Yahoo, koersen, holdings |
+| `rule.py` | De regel en de beslissing |
+| `testing.py` | De rollende test van de regel |
+| `analysis.py` | Fundamentals, analistenverwachting, ingevoerde scores |
+| `storage.py` | Opgeslagen checks, cash-status, snapshots en regel |
+| `report.py` | Overzicht van main en portefeuilletabel |

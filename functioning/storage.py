@@ -1,0 +1,142 @@
+"""Everything the app saves in data/: checks, cash status, snapshots and the chosen rule."""
+
+from functioning.constants import CHECKS_FILE, RULE_FILE, SNAPSHOT_FILE, STATUS_FILE
+from functioning.imports import dataclass, date, json
+from functioning.rule import LIVE, Rule
+
+
+def write_json(path, data) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2))
+
+
+# --------------------------------------------------------------- checks
+
+
+@dataclass(frozen=True)
+class Call:
+    ticker: str
+    action: str   # "buy", "sell" or "hold"
+    price: float  # last close in the currency of the listing
+
+
+@dataclass(frozen=True)
+class Check:
+    day: date
+    news: float
+    intuition: float
+    calls: list[Call]
+
+
+class Checks:
+    """Log of every check: the two typed scores and the call per stock."""
+
+    def __init__(self, path=CHECKS_FILE):
+        self.path = path
+
+    def load(self) -> list[Check]:
+        if not self.path.exists():
+            return []
+        return [
+            Check(
+                date.fromisoformat(c["day"]),
+                c["news"],
+                c["intuition"],
+                [Call(**call) for call in c["calls"]],
+            )
+            for c in json.loads(self.path.read_text())
+        ]
+
+    def save(self, checks: list[Check]) -> None:
+        write_json(
+            self.path,
+            [
+                {
+                    "day": c.day.isoformat(),
+                    "news": c.news,
+                    "intuition": c.intuition,
+                    "calls": [vars(call) for call in c.calls],
+                }
+                for c in checks
+            ],
+        )
+
+    def add(self, check: Check) -> None:
+        """Add a check. An existing check for the same day is replaced."""
+        others = [c for c in self.load() if c.day != check.day]
+        self.save(sorted(others + [check], key=lambda c: c.day))
+
+    @staticmethod
+    def previous(checks: list[Check], day: date) -> Check | None:
+        """The latest check before `day`."""
+        earlier = [c for c in checks if c.day < day]
+        return max(earlier, key=lambda c: c.day, default=None)
+
+
+# --------------------------------------------------------------- status
+
+
+class Cash:
+    """Which stocks Kay sold on a signal and has not bought back yet."""
+
+    def __init__(self, path=STATUS_FILE):
+        self.path = path
+
+    def load(self) -> set[str]:
+        if not self.path.exists():
+            return set()
+        return set(json.loads(self.path.read_text())["cash"])
+
+    def save(self, tickers: set[str]) -> None:
+        write_json(self.path, {"cash": sorted(tickers)})
+
+
+# ------------------------------------------------------------ snapshots
+
+
+class Snapshots:
+    """The value in euro per ticker, per day."""
+
+    def __init__(self, path=SNAPSHOT_FILE):
+        self.path = path
+
+    def load(self) -> dict[str, dict[str, float]]:
+        """{day (ISO): {ticker: value in euro}} for every saved day."""
+        if not self.path.exists():
+            return {}
+        return json.loads(self.path.read_text())
+
+    def save(self, day: date, values: dict[str, float]) -> None:
+        """Store the values of one day. Running twice on the same day replaces it."""
+        snapshots = self.load()
+        snapshots[day.isoformat()] = {t: round(v, 2) for t, v in values.items()}
+        write_json(self.path, dict(sorted(snapshots.items())))
+
+    def previous(self, day: date) -> tuple[str, dict[str, float]] | None:
+        """The latest saved day before `day`, with its values."""
+        snapshots = self.load()
+        earlier = [d for d in snapshots if d < day.isoformat()]
+        if not earlier:
+            return None
+        latest = max(earlier)
+        return latest, snapshots[latest]
+
+
+# ----------------------------------------------------------------- rule
+
+
+class RuleStore:
+    """The rule setting main uses: the best setting of the last walkforward run."""
+
+    def __init__(self, path=RULE_FILE):
+        self.path = path
+
+    def save(self, rule: Rule, day: date) -> None:
+        write_json(self.path, {"chosen": day.isoformat(), "params": vars(rule)})
+
+    def load(self) -> tuple[Rule, date | None]:
+        """The saved rule and the day it was chosen, or the start settings and None."""
+        if not self.path.exists():
+            return LIVE, None
+        raw = json.loads(self.path.read_text())
+        return Rule(**raw["params"]), date.fromisoformat(raw["chosen"])

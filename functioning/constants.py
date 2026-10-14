@@ -16,10 +16,10 @@ ACTION_LABELS = {"buy": "KOPEN", "hold": "HOUDEN", "sell": "VERKOPEN"}
 CHECK_WEEKDAYS = {0: "Maandag", 2: "Woensdag", 4: "Vrijdag"}
 
 # Files
-HOLDINGS_FILE = Path("data/holdings.json")
-SNAPSHOT_FILE = Path("data/snapshots.json")
-CHECKS_FILE = Path("data/checks.json")
-STATUS_FILE = Path("data/status.json")
+HOLDINGS_FILE = Path("../data/holdings.json")
+SNAPSHOT_FILE = Path("../data/snapshots.json")
+CHECKS_FILE = Path("../data/checks.json")
+STATUS_FILE = Path("../data/status.json")
 RULE_FILE = Path("data/rule.json")
 RULE_MAX_AGE_DAYS = 35        # main warns when the saved rule is older than this
 
@@ -83,3 +83,4 @@ GRID_REVIEW_DAYS = (2, 3)
 WF_TRAIN_DAYS = 250           # about one year of trading days
 WF_TEST_DAYS = 42             # about two months of trading days
 STABILITY_TOP = 10            # settings shown per group
+RECENCY_HALF_LIFE_WINDOWS = 6  # a period counts half as much for every 6 periods (about a year) it lies back
