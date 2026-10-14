@@ -1,13 +1,15 @@
-"""Looking back over the last three months. Run when you want to look: python backcasting.py
+"""Looking back. Run when you want to look: python backcasting.py
 
-First table: buy and hold against the best possible result (perfect foresight).
-Second table: buy and hold against the rule in data/rule.json, costs included.
+First table: the last three months, buy and hold against the best possible result.
+Second table: the last three months, buy and hold against the rule in data/rule.json.
+Third table: since TRACK_START, buy and hold against the executed calls (data/ledger.json)
+and against the best possible result.
 """
 
-from functioning.constants import BACKCAST_DAYS, BACKCAST_TRADING_DAYS
+from functioning.constants import ACTION_LABELS, BACKCAST_DAYS, BACKCAST_TRADING_DAYS, TRACK_START
 from functioning.imports import dataclass, date, timedelta
 from functioning.market import Candle, Holdings, Quote, load_stock_data
-from functioning.storage import RuleStore
+from functioning.storage import Ledger, RuleStore, Trade
 from functioning.testing import RuleRow, rule_rows, rule_total
 
 # ------------------------------------------- hold against perfect foresight
@@ -20,6 +22,7 @@ class BackcastRow:
     hold: float          # return of buy and hold, as a fraction
     perfect_week: float  # best possible return, trading once a week
     perfect_day: float   # best possible return, trading every day
+    executed: float | None = None  # return of the executed calls, costs included
 
 
 def daily_returns(closes: list[float]) -> list[float]:
@@ -55,27 +58,40 @@ def weekly_closes(candles: list[Candle]) -> list[float]:
     return [c.close for c in start + weekly]
 
 
-def build_row(ticker: str, quantity: float, start: date, end: date) -> BackcastRow:
+def executed_return(trades: list[Trade], ticker: str, quantity: float, closes: list[float], fx: float) -> float:
+    """Return of the executed calls on one stock, as a fraction."""
+    value = Ledger.value_eur(trades, ticker, quantity, closes[-1], fx)
+    return value / (quantity * closes[0] * fx) - 1
+
+
+def build_row(
+    ticker: str, quantity: float, start: date, end: date, trades: list[Trade] | None = None
+) -> BackcastRow:
+    """One row. With `trades` the row also has the return of the executed calls."""
     quote = Quote(ticker)
     candles = quote.candles(start, end)
     closes = [c.close for c in candles]
+    fx = quote.fx_to_eur()
     return BackcastRow(
         ticker=ticker,
-        start_eur=quantity * closes[0] * quote.fx_to_eur(),
+        start_eur=quantity * closes[0] * fx,
         hold=buy_and_hold_return(closes),
         perfect_week=perfect_return(weekly_closes(candles)),
         perfect_day=perfect_return(closes),
+        executed=None if trades is None else executed_return(trades, ticker, quantity, closes, fx),
     )
 
 
-def run_backcast() -> tuple[list[BackcastRow], list[str]]:
-    """Rows for all holdings over the backcast window, plus tickers that failed."""
+def run_backcast(
+    start: date | None = None, trades: list[Trade] | None = None
+) -> tuple[list[BackcastRow], list[str]]:
+    """Rows for all holdings from `start` (default: the backcast window), plus tickers that failed."""
     end = date.today()
-    start = end - timedelta(days=BACKCAST_DAYS)
+    start = start or end - timedelta(days=BACKCAST_DAYS)
     rows, failed = [], []
     for ticker, quantity in Holdings().quantities().items():
         try:
-            rows.append(build_row(ticker, quantity, start, end))
+            rows.append(build_row(ticker, quantity, start, end, trades))
         except Exception:
             failed.append(ticker)
     return rows, failed
@@ -133,6 +149,62 @@ def print_backcast() -> None:
         print(f"\nGeen data van Yahoo voor: {', '.join(failed)}")
 
 
+# ------------------------------------- since the start: hold, executed, maximum
+
+
+def format_since_line(label: str, values: tuple[float, float, float, float, float]) -> str:
+    start, hold, executed, week, day = values
+    return (
+        f"{label:<10}{start:>12,.2f}{hold * 100:>+13.1f}%{executed * 100:>+11.1f}%"
+        f"{week * 100:>+11.1f}%{day * 100:>+11.1f}%"
+    )
+
+
+def format_since_table(rows: list[BackcastRow]) -> str:
+    header = (
+        f"{'Ticker':<10}{'Start EUR':>12}{'Vasthouden':>14}{'Uitgevoerd':>12}"
+        f"{'Max/week':>12}{'Max/dag':>12}"
+    )
+    lines = [header, "-" * len(header)]
+    lines += [
+        format_since_line(r.ticker, (r.start_eur, r.hold, r.executed, r.perfect_week, r.perfect_day))
+        for r in rows
+    ]
+    lines.append("-" * len(header))
+    lines.append(
+        format_since_line(
+            "TOTAAL",
+            (
+                total_start_eur(rows),
+                total_return(rows, "hold"),
+                total_return(rows, "executed"),
+                total_return(rows, "perfect_week"),
+                total_return(rows, "perfect_day"),
+            ),
+        )
+    )
+    return "\n".join(lines)
+
+
+def format_trades(trades: list[Trade]) -> str:
+    if not trades:
+        return "Uitgevoerde acties: nog geen"
+    lines = ["Uitgevoerde acties (fictief, op de koers van de check):"]
+    lines += [f"  {t.day}  {ACTION_LABELS[t.action]:<10}{t.ticker:<10}koers {t.price:,.2f}" for t in trades]
+    return "\n".join(lines)
+
+
+def print_since_start() -> None:
+    trades = [t for t in Ledger().load() if t.day >= TRACK_START]
+    rows, failed = run_backcast(TRACK_START, trades)
+    print(f"\nSinds {TRACK_START}, huidige aantallen")
+    print("Uitgevoerd: kosten per transactie meegerekend. Vasthouden en maximum: zonder kosten.")
+    print(format_since_table(rows))
+    print(f"\n{format_trades(trades)}")
+    if failed:
+        print(f"\nGeen data van Yahoo voor: {', '.join(failed)}")
+
+
 # ------------------------------------------------ hold against the rule
 
 
@@ -165,3 +237,4 @@ def print_rule_backcast() -> None:
 if __name__ == "__main__":
     print_backcast()
     print_rule_backcast()
+    print_since_start()

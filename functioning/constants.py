@@ -1,5 +1,6 @@
 """All constants. No logic."""
 
+from datetime import date
 from pathlib import Path
 
 # Every score (news, intuition, analysis, context) runs from -SCORE_MAX to +SCORE_MAX
@@ -16,12 +17,18 @@ ACTION_LABELS = {"buy": "KOPEN", "hold": "HOUDEN", "sell": "VERKOPEN"}
 CHECK_WEEKDAYS = {0: "Maandag", 2: "Woensdag", 4: "Vrijdag"}
 
 # Files
-HOLDINGS_FILE = Path("../data/holdings.json")
-SNAPSHOT_FILE = Path("../data/snapshots.json")
-CHECKS_FILE = Path("../data/checks.json")
-STATUS_FILE = Path("../data/status.json")
-RULE_FILE = Path("data/rule.json")
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # the data folder next to main.py
+HOLDINGS_FILE = DATA_DIR / "holdings.json"
+SNAPSHOT_FILE = DATA_DIR / "snapshots.json"
+CHECKS_FILE = DATA_DIR / "checks.json"
+STATUS_FILE = DATA_DIR / "status.json"
+LEDGER_FILE = DATA_DIR / "ledger.json"
+RULE_FILE = DATA_DIR / "rule.json"
 RULE_MAX_AGE_DAYS = 35        # main warns when the saved rule is older than this
+
+# Follow-up of the calls
+PAPER_TRADING = True          # True: main records the calls as done in data/ledger.json. False: main asks j/N per call
+TRACK_START = date(2026, 10, 12)  # backcasting compares hold, executed calls and the maximum from this day
 
 # Backcast table (hold versus perfect foresight), calendar days
 BACKCAST_DAYS = 92

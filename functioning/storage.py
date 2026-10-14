@@ -1,6 +1,6 @@
 """Everything the app saves in data/: checks, cash status, snapshots and the chosen rule."""
 
-from functioning.constants import CHECKS_FILE, RULE_FILE, SNAPSHOT_FILE, STATUS_FILE
+from functioning.constants import CHECKS_FILE, LEDGER_FILE, RULE_FILE, SNAPSHOT_FILE, STATUS_FILE, TRANSACTION_COST_EUR
 from functioning.imports import dataclass, date, json
 from functioning.rule import LIVE, Rule
 
@@ -18,6 +18,9 @@ class Call:
     ticker: str
     action: str   # "buy", "sell" or "hold"
     price: float  # last close in the currency of the listing
+    reason: str = ""
+    analysis: float | None = None  # financial analysis score of the stock
+    context: float | None = None   # news, intuition and analysis together
 
 
 @dataclass(frozen=True)
@@ -26,6 +29,7 @@ class Check:
     news: float
     intuition: float
     calls: list[Call]
+    rule: dict | None = None  # the setting of the rule that made these calls
 
 
 class Checks:
@@ -43,6 +47,7 @@ class Checks:
                 c["news"],
                 c["intuition"],
                 [Call(**call) for call in c["calls"]],
+                c.get("rule"),
             )
             for c in json.loads(self.path.read_text())
         ]
@@ -56,6 +61,7 @@ class Checks:
                     "news": c.news,
                     "intuition": c.intuition,
                     "calls": [vars(call) for call in c.calls],
+                    "rule": c.rule,
                 }
                 for c in checks
             ],
@@ -89,6 +95,73 @@ class Cash:
 
     def save(self, tickers: set[str]) -> None:
         write_json(self.path, {"cash": sorted(tickers)})
+
+
+# --------------------------------------------------------------- ledger
+
+
+@dataclass(frozen=True)
+class Trade:
+    day: date
+    ticker: str
+    action: str   # "buy" or "sell"
+    price: float  # last close in the currency of the listing
+
+
+class Ledger:
+    """Fictive trades: the calls of a check, recorded as if they were done."""
+
+    def __init__(self, path=LEDGER_FILE):
+        self.path = path
+
+    def load(self) -> list[Trade]:
+        if not self.path.exists():
+            return []
+        return [
+            Trade(date.fromisoformat(t["day"]), t["ticker"], t["action"], t["price"])
+            for t in json.loads(self.path.read_text())
+        ]
+
+    def save(self, trades: list[Trade]) -> None:
+        write_json(
+            self.path,
+            [
+                {"day": t.day.isoformat(), "ticker": t.ticker, "action": t.action, "price": t.price}
+                for t in trades
+            ],
+        )
+
+    def record(self, day: date, new: list[Trade]) -> None:
+        """Store the trades of one day. Running twice on the same day replaces that day."""
+        others = [t for t in self.load() if t.day != day]
+        self.save(sorted(others + new, key=lambda t: (t.day, t.ticker)))
+
+    @staticmethod
+    def cash_before(trades: list[Trade], day: date) -> set[str]:
+        """Tickers that were sold and not bought back before `day`."""
+        cash: set[str] = set()
+        for trade in sorted(trades, key=lambda t: t.day):
+            if trade.day >= day:
+                break
+            if trade.action == "sell":
+                cash.add(trade.ticker)
+            else:
+                cash.discard(trade.ticker)
+        return cash
+
+    @staticmethod
+    def value_eur(trades: list[Trade], ticker: str, quantity: float, price_now: float, fx: float) -> float:
+        """What the position is worth now in euro, costs included. It starts as `quantity`
+        shares. A sale turns the shares into cash, a buy turns the cash back into shares."""
+        shares, cash = quantity, 0.0
+        for trade in sorted((t for t in trades if t.ticker == ticker), key=lambda t: t.day):
+            if trade.action == "sell" and shares > 0:
+                cash = shares * trade.price * fx - TRANSACTION_COST_EUR
+                shares = 0.0
+            elif trade.action == "buy" and cash > TRANSACTION_COST_EUR:
+                shares = (cash - TRANSACTION_COST_EUR) / (trade.price * fx)
+                cash = 0.0
+        return shares * price_now * fx + cash
 
 
 # ------------------------------------------------------------ snapshots
