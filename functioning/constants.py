@@ -24,6 +24,7 @@ CHECKS_FILE = DATA_DIR / "checks.json"
 STATUS_FILE = DATA_DIR / "status.json"
 LEDGER_FILE = DATA_DIR / "ledger.json"
 DAYS_FILE = DATA_DIR / "days.json"
+PRICES_FILE = DATA_DIR / "prices.json"
 RULE_FILE = DATA_DIR / "rule.json"
 RULE_MAX_AGE_DAYS = 35        # main warns when the saved rule is older than this
 
