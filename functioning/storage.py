@@ -1,6 +1,6 @@
 """Everything the app saves in data/: checks, cash status, snapshots and the chosen rule."""
 
-from functioning.constants import CHECKS_FILE, LEDGER_FILE, RULE_FILE, SNAPSHOT_FILE, STATUS_FILE, TRANSACTION_COST_EUR
+from functioning.constants import CHECKS_FILE, DAYS_FILE, LEDGER_FILE, RULE_FILE, SNAPSHOT_FILE, STATUS_FILE, TRANSACTION_COST_EUR
 from functioning.imports import dataclass, date, json
 from functioning.rule import LIVE, Rule
 
@@ -162,6 +162,67 @@ class Ledger:
                 shares = (cash - TRANSACTION_COST_EUR) / (trade.price * fx)
                 cash = 0.0
         return shares * price_now * fx + cash
+
+
+# ----------------------------------------------------------------- days
+
+
+@dataclass(frozen=True)
+class DayRow:
+    ticker: str
+    price: float                     # last close in the currency of the listing
+    fundamentals: float | None       # analysis part 1, -5..+5
+    forecast: float | None           # analysis part 2, -5..+5
+    action: str                      # the call: "buy", "sell" or "hold"
+    executed: bool                   # was the call carried out (fictively)?
+
+
+@dataclass(frozen=True)
+class DayRecord:
+    day: date
+    news: float
+    intuition: float
+    rows: list[DayRow]
+
+
+class Days:
+    """Everything of one check day, once per day: the dashboard can rebuild the
+    calls from this with any factor switched on or off."""
+
+    def __init__(self, path=DAYS_FILE):
+        self.path = path
+
+    def load(self) -> list[DayRecord]:
+        if not self.path.exists():
+            return []
+        return [
+            DayRecord(
+                date.fromisoformat(d["day"]),
+                d["news"],
+                d["intuition"],
+                [DayRow(**row) for row in d["rows"]],
+            )
+            for d in json.loads(self.path.read_text())
+        ]
+
+    def save(self, records: list[DayRecord]) -> None:
+        write_json(
+            self.path,
+            [
+                {
+                    "day": r.day.isoformat(),
+                    "news": r.news,
+                    "intuition": r.intuition,
+                    "rows": [vars(row) for row in r.rows],
+                }
+                for r in records
+            ],
+        )
+
+    def add(self, record: DayRecord) -> None:
+        """Add a day. Running twice on the same day replaces that day."""
+        others = [r for r in self.load() if r.day != record.day]
+        self.save(sorted(others + [record], key=lambda r: r.day))
 
 
 # ------------------------------------------------------------ snapshots

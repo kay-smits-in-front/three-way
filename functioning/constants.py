@@ -23,6 +23,7 @@ SNAPSHOT_FILE = DATA_DIR / "snapshots.json"
 CHECKS_FILE = DATA_DIR / "checks.json"
 STATUS_FILE = DATA_DIR / "status.json"
 LEDGER_FILE = DATA_DIR / "ledger.json"
+DAYS_FILE = DATA_DIR / "days.json"
 RULE_FILE = DATA_DIR / "rule.json"
 RULE_MAX_AGE_DAYS = 35        # main warns when the saved rule is older than this
 

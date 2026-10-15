@@ -6,7 +6,7 @@ from functioning.imports import date
 from functioning.market import StockData, load_stock_data
 from functioning.report import CheckOverview, PortfolioReport, StockView
 from functioning.rule import Action, Rule
-from functioning.storage import Call, Cash, Check, Checks, Ledger, RuleStore, Trade
+from functioning.storage import Call, Cash, Check, Checks, DayRecord, DayRow, Days, Ledger, RuleStore, Trade
 
 
 def check_title(day: date) -> str:
@@ -54,6 +54,21 @@ def make_check(day: date, news: float, intuition: float, views: list[StockView],
     return Check(day, news, intuition, calls, vars(rule))
 
 
+def make_day(
+    day: date, news: float, intuition: float, views: list[StockView],
+    analyses: dict[str, Analysis], executed: bool,
+) -> DayRecord:
+    """The input and the calls of one day, ready to store."""
+    rows = [
+        DayRow(
+            v.ticker, v.price, analyses[v.ticker].fundamentals, analyses[v.ticker].forecast,
+            v.decision.action.value, executed and v.decision.action is not Action.HOLD,
+        )
+        for v in views
+    ]
+    return DayRecord(day, news, intuition, rows)
+
+
 def paper_trades(day: date, views: list[StockView]) -> list[Trade]:
     """The calls that are not HOLD, as trades done at the price of the check."""
     return [
@@ -99,6 +114,7 @@ def main() -> None:
     else:
         cash_status.save(confirm_trades(views, cash))
     checks_log.add(make_check(day, news, intuition, views, rule))
+    Days().add(make_day(day, news, intuition, views, analyses, PAPER_TRADING))
     print()
     PortfolioReport().print()
 
