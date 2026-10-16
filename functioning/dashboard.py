@@ -2,6 +2,7 @@
 setting, and the maximum (perfect foresight), per stock and for the portfolio, in euro."""
 
 from functioning.constants import CONTEXT_VETO, TRANSACTION_COST_EUR, WEIGHT_INTUITION, WEIGHT_NEWS
+from functioning.groups import Plan
 from functioning.imports import dataclass, date, timedelta
 from functioning.market import Holdings
 from functioning.prices import PriceCache, Series
@@ -18,6 +19,11 @@ class Scenario:
     rule: Rule
     news: float | None = None
     intuition: float | None = None
+    plan: Plan | None = None  # when set, every stock in the plan follows the rule of its group
+
+    def strategy(self, ticker: str):
+        """The rule that applies to this stock."""
+        return (self.plan.strategy_for(ticker) if self.plan else None) or self.rule
 
     def context(self) -> float:
         parts = [(v, w) for v, w in ((self.news, WEIGHT_NEWS), (self.intuition, WEIGHT_INTUITION)) if v is not None]
@@ -39,10 +45,10 @@ def vetoed(signal: Signal, context: float, veto: float) -> bool:
     return (signal is Signal.SELL and context >= veto) or (signal is Signal.BUY and context <= -veto)
 
 
-def rule_moves(closes: list[float], scenario: Scenario, first: int, last: int, value_eur: float, veto: float) -> list[Move]:
-    """Run the rule from `first` to `last`. A signal at a close is traded at the next close."""
-    rule, moves, invested = scenario.rule, [], True
-    context, wealth = scenario.context(), value_eur
+def rule_moves(closes: list[float], rule, context: float, first: int, last: int, value_eur: float, veto: float) -> list[Move]:
+    """Run a rule (Rule or TrendRule) from `first` to `last`. A signal at a close is
+    traded at the next close."""
+    moves, invested, wealth = [], True, value_eur
     for i in range(first, last, rule.review_days):
         if is_winner_at(closes, i):
             continue
@@ -83,18 +89,21 @@ def perfect_moves(closes: list[float], first: int, last: int, value_eur: float) 
 # ------------------------------------------------------------- values
 
 
-def value_curve(closes: list[float], moves: list[Move], first: int, last: int, shares0: float, fx: float) -> list[float]:
-    """Value in euro per day from `first` to `last`, costs included."""
+def value_curve(
+    closes: list[float], moves: list[Move], first: int, last: int, shares0: float, fx: float
+) -> tuple[list[float], int, int]:
+    """Value in euro per day from `first` to `last`, costs included, plus the number
+    of sales and buys that were really carried out (each one costs TRANSACTION_COST_EUR)."""
     by_index = {m.index: m for m in moves}
-    shares, cash, values = shares0, 0.0, []
+    shares, cash, values, sells, buys = shares0, 0.0, [], 0, 0
     for i in range(first, last + 1):
         move = by_index.get(i)
         if move and move.action == "sell" and shares > 0:
-            cash, shares = shares * move.price * fx - TRANSACTION_COST_EUR, 0.0
+            cash, shares, sells = shares * move.price * fx - TRANSACTION_COST_EUR, 0.0, sells + 1
         elif move and move.action == "buy" and cash > TRANSACTION_COST_EUR:
-            shares, cash = (cash - TRANSACTION_COST_EUR) / (move.price * fx), 0.0
+            shares, cash, buys = (cash - TRANSACTION_COST_EUR) / (move.price * fx), 0.0, buys + 1
         values.append(shares * closes[i] * fx + cash)
-    return values
+    return values, sells, buys
 
 
 def sale_effects(closes: list[float], moves: list[Move], shares0: float, fx: float, last: int) -> list[dict]:
@@ -140,23 +149,27 @@ class StockPanel:
         self.value0 = quantity * series.closes[self.first] * series.fx
         self.trades = trades
 
-    def curve(self, moves: list[Move]) -> list[float]:
+    def curve(self, moves: list[Move]) -> tuple[list[float], dict]:
+        """The value line and its costs: number of sales, buys and the euro they cost."""
         s = self.series
-        return value_curve(s.closes, moves, self.first, self.last, self.shares0, s.fx)
+        values, sells, buys = value_curve(s.closes, moves, self.first, self.last, self.shares0, s.fx)
+        return values, {"sells": sells, "buys": buys, "costs": round((sells + buys) * TRANSACTION_COST_EUR, 2)}
 
     def build(self) -> dict:
         s = self.series
-        rule = rule_moves(s.closes, self.scenario, self.first, self.last - 1, self.value0, self.veto)
+        strategy = self.scenario.strategy(s.ticker)
+        rule = rule_moves(s.closes, strategy, self.scenario.context(), self.first, self.last - 1, self.value0, self.veto)
         best = perfect_moves(s.closes, self.first, self.last, self.value0)
         done = executed_moves(self.trades, s.ticker, s.days, self.first)
+        lines = {"hold": self.curve([]), "rule": self.curve(rule), "max": self.curve(best), "executed": self.curve(done)}
         return {
             "ticker": s.ticker,
+            "group": self.scenario.plan.group_of(s.ticker) if self.scenario.plan else None,
+            "strategy": strategy.describe(),
             "days": [d.isoformat() for d in s.days[self.first:]],
             "price": [round(c, 4) for c in s.closes[self.first:]],
-            "hold": self.curve([]),
-            "rule": self.curve(rule),
-            "max": self.curve(best),
-            "executed": self.curve(done),
+            **{name: values for name, (values, _) in lines.items()},
+            "costs": {name: stats for name, (_, stats) in lines.items()},
             "rule_moves": [self.marker(m) for m in rule],
             "executed_moves": [self.marker(m) for m in done],
             "effects": [
@@ -194,7 +207,15 @@ def combine(panels: list[dict]) -> dict:
         panel["price"] = forward_fill(axis, panel["days"], panel["price"])
         panel["days"] = axis
     totals = {line: [round(sum(p[line][i] for p in panels), 2) for i in range(len(axis))] for line in LINES}
-    return {"days": axis, "stocks": panels, "total": totals}
+    return {"days": axis, "stocks": panels, "total": totals, "costs": total_costs(panels)}
+
+
+def total_costs(panels: list[dict]) -> dict:
+    """Sales, buys and euro costs per line, summed over the stocks."""
+    return {
+        line: {key: round(sum(p["costs"][line][key] for p in panels), 2) for key in ("sells", "buys", "costs")}
+        for line in LINES
+    }
 
 
 def dashboard_data(scenario: Scenario, window_days: int, cache: PriceCache | None = None,

@@ -46,8 +46,8 @@ GROWTH_FULL_SCORE_PCT = 25.0  # revenue growth of 25% = score +5
 DEBT_NEUTRAL_PCT = 100.0      # debt/equity of 100% = score 0
 DEBT_PCT_PER_POINT = 40.0     # every 40 points more debt = 1 point lower
 
-# Transaction costs (DEGIRO, about 3 euro per buy or sell)
-TRANSACTION_COST_EUR = 3.0
+# Transaction costs (DEGIRO, 3.95 euro per buy or sell, for every stock)
+TRANSACTION_COST_EUR = 3.95
 COST_COVER_FACTOR = 2.0       # expected move must be this many times the round trip cost
 
 # Start settings of the rule. main uses the setting that `python walkforward.py` saved in
@@ -93,3 +93,24 @@ WF_TRAIN_DAYS = 250           # about one year of trading days
 WF_TEST_DAYS = 42             # about two months of trading days
 STABILITY_TOP = 10            # settings shown per group
 RECENCY_HALF_LIFE_WINDOWS = 6  # a period counts half as much for every 6 periods (about a year) it lies back
+
+# Groups of stocks with their own rule. A group is chosen by the look of the price curve.
+GROUP_PEAK = "peak"          # extreme rise, then a long decline: follow the trend
+GROUP_VOLATILE = "volatile"  # large swings in both directions: contrarian with wide limits
+GROUP_CALM = "calm"          # small moves around a flat or positive average: mostly hold
+GROUP_LABELS = {GROUP_PEAK: "Piek en daling", GROUP_VOLATILE: "Volatiel", GROUP_CALM: "Rustig"}
+DEFAULT_GROUPS = {
+    "MRAM": GROUP_PEAK, "HYLN": GROUP_PEAK, "RDW": GROUP_PEAK,
+    "BRN.AX": GROUP_VOLATILE, "QBTS": GROUP_VOLATILE, "IONQ": GROUP_VOLATILE,
+    "RGTI": GROUP_VOLATILE, "LAES": GROUP_VOLATILE,
+    "ALTO": GROUP_CALM, "ARQQ": GROUP_CALM, "DOCS": GROUP_CALM,
+    "MIH.F": GROUP_CALM, "NVDA": GROUP_CALM, "SPCX": GROUP_CALM,
+}
+# Start settings per group. These are first guesses to tune in the dashboard.
+TREND_MA_DAYS = 20            # rolling average window of the trend rule, trading days
+TREND_BAND_PCT = 3.0          # sell this far under the average, buy back this far above it
+TREND_REVIEW_DAYS = 1
+VOLATILE_SETTINGS = {"lookback_days": 2, "up_pct": 15.0, "down_pct": 12.0, "stop_pct": 10.0,
+                     "floor_pct": 25.0, "regime_pct": 40.0, "turn_pct": 4.0, "review_days": 2}
+CALM_SETTINGS = {"lookback_days": 3, "up_pct": 10.0, "down_pct": 6.0, "stop_pct": 8.0,
+                 "floor_pct": 20.0, "regime_pct": 40.0, "turn_pct": 3.0, "review_days": 2}

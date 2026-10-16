@@ -44,7 +44,7 @@ from functioning.constants import (
     WINNER_LOOKBACK_DAYS,
     WINNER_RETURN_PCT,
 )
-from functioning.imports import StrEnum, dataclass
+from functioning.imports import StrEnum, dataclass, mean
 
 
 class Signal(StrEnum):
@@ -214,6 +214,37 @@ class Rule:
                 trades += 1
         final = shares * closes[last] + cash
         return Result((final / position_eur - 1) * 100, trades)
+
+
+@dataclass(frozen=True)
+class TrendRule:
+    """Follow the trend. Invested: sell when the close falls `band_pct` under its rolling
+    average. In cash: buy back when the close rises `band_pct` above it.
+    It has the same methods as Rule, so the dashboard can use either."""
+
+    ma_days: int
+    band_pct: float
+    review_days: int
+
+    def describe(self) -> str:
+        return f"trend: gemiddelde {self.ma_days} dgn, band {self.band_pct:.1f}%, elke {self.review_days} dgn"
+
+    def distance_pct(self, closes: list[float], index: int) -> float:
+        """How far the close is above (+) or under (-) its rolling average, in percent."""
+        return (closes[index] / mean(closes[index - self.ma_days + 1:index + 1]) - 1) * 100
+
+    def trend_outcome(self, closes: list[float], index: int, invested: bool) -> Outcome:
+        if index < self.ma_days:
+            return Outcome(Signal.NONE, "te weinig koersdata")
+        distance = self.distance_pct(closes, index)
+        if invested and distance <= -self.band_pct:
+            return Outcome(Signal.SELL, "onder het rollend gemiddelde: verkopen")
+        if not invested and distance >= self.band_pct:
+            return Outcome(Signal.BUY, "boven het rollend gemiddelde: terugkopen")
+        return Outcome(Signal.NONE, "trend ongewijzigd")
+
+    def trade_move(self, closes: list[float], index: int) -> float:
+        return abs(self.distance_pct(closes, index)) if index >= self.ma_days else 0.0
 
 
 LIVE = Rule(
