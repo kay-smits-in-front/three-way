@@ -98,7 +98,9 @@ RECENCY_HALF_LIFE_WINDOWS = 6  # a period counts half as much for every 6 period
 GROUP_PEAK = "peak"          # extreme rise, then a long decline: follow the trend
 GROUP_VOLATILE = "volatile"  # large swings in both directions: contrarian with wide limits
 GROUP_CALM = "calm"          # small moves around a flat or positive average: mostly hold
-GROUP_LABELS = {GROUP_PEAK: "Piek en daling", GROUP_VOLATILE: "Volatiel", GROUP_CALM: "Rustig"}
+GROUP_CUMULATIVE = "cumulative"  # compare with the average of the whole history: sell when dear, buy when cheap
+GROUP_LABELS = {GROUP_PEAK: "Piek en daling", GROUP_VOLATILE: "Volatiel", GROUP_CALM: "Rustig",
+                GROUP_CUMULATIVE: "Cumulatief gemiddelde"}
 DEFAULT_GROUPS = {
     "MRAM": GROUP_PEAK, "HYLN": GROUP_PEAK, "RDW": GROUP_PEAK,
     "BRN.AX": GROUP_VOLATILE, "QBTS": GROUP_VOLATILE, "IONQ": GROUP_VOLATILE,
@@ -114,3 +116,4 @@ VOLATILE_SETTINGS = {"lookback_days": 2, "up_pct": 15.0, "down_pct": 12.0, "stop
                      "floor_pct": 25.0, "regime_pct": 40.0, "turn_pct": 4.0, "review_days": 2}
 CALM_SETTINGS = {"lookback_days": 3, "up_pct": 10.0, "down_pct": 6.0, "stop_pct": 8.0,
                  "floor_pct": 20.0, "regime_pct": 40.0, "turn_pct": 3.0, "review_days": 2}
+CUMULATIVE_SETTINGS = {"up_pct": 40.0, "down_pct": 25.0, "review_days": 2}  # start guess: sell 40% over, buy back 25% under

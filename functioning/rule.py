@@ -247,6 +247,38 @@ class TrendRule:
         return abs(self.distance_pct(closes, index)) if index >= self.ma_days else 0.0
 
 
+@dataclass(frozen=True)
+class CumulativeRule:
+    """Compare the close with the average of all closes so far (the cumulative average).
+    Invested: sell when the close is `up_pct` above it. In cash: buy back when it is
+    `down_pct` below it. Same methods as Rule, so the dashboard can use it."""
+
+    up_pct: float
+    down_pct: float
+    review_days: int
+
+    def describe(self) -> str:
+        return f"cumulatief gemiddelde: verkoop +{self.up_pct:.0f}%, terugkoop -{self.down_pct:.0f}%, elke {self.review_days} dgn"
+
+    @staticmethod
+    def distance_pct(closes: list[float], index: int) -> float:
+        """How far the close is above (+) or under (-) the average of closes[0..index], in percent."""
+        return (closes[index] / mean(closes[:index + 1]) - 1) * 100
+
+    def trend_outcome(self, closes: list[float], index: int, invested: bool) -> Outcome:
+        if index < REGIME_DAYS:
+            return Outcome(Signal.NONE, "te weinig koersdata")
+        distance = self.distance_pct(closes, index)
+        if invested and distance >= self.up_pct:
+            return Outcome(Signal.SELL, "ver boven het cumulatief gemiddelde: verkopen")
+        if not invested and distance <= -self.down_pct:
+            return Outcome(Signal.BUY, "ver onder het cumulatief gemiddelde: terugkopen")
+        return Outcome(Signal.NONE, "dicht bij het gemiddelde")
+
+    def trade_move(self, closes: list[float], index: int) -> float:
+        return abs(self.distance_pct(closes, index)) if index >= REGIME_DAYS else 0.0
+
+
 LIVE = Rule(
     LIVE_LOOKBACK_DAYS,
     LIVE_UP_PCT,

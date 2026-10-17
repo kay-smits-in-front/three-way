@@ -3,8 +3,10 @@ to a setting. Used by the dashboard to try different rules for different stocks.
 
 from functioning.constants import (
     CALM_SETTINGS,
+    CUMULATIVE_SETTINGS,
     DEFAULT_GROUPS,
     GROUP_CALM,
+    GROUP_CUMULATIVE,
     GROUP_LABELS,
     GROUP_PEAK,
     GROUP_VOLATILE,
@@ -14,9 +16,10 @@ from functioning.constants import (
     VOLATILE_SETTINGS,
 )
 from functioning.imports import dataclass
-from functioning.rule import Rule, TrendRule
+from functioning.rule import CumulativeRule, Rule, TrendRule
 
 TREND_LIMITS = {"ma_days": (3, 250, int), "band_pct": (0.5, 50, float), "review_days": (1, 20, int)}
+CUMULATIVE_LIMITS = {"up_pct": (1, 500, float), "down_pct": (1, 99, float), "review_days": (1, 20, int)}
 RULE_LIMITS = {
     "lookback_days": (1, 20, int), "up_pct": (0.5, 200, float), "down_pct": (0.5, 100, float),
     "stop_pct": (0.5, 100, float), "floor_pct": (0.5, 100, float), "regime_pct": (5, 300, float),
@@ -26,7 +29,9 @@ START_SETTINGS = {
     GROUP_PEAK: {"ma_days": TREND_MA_DAYS, "band_pct": TREND_BAND_PCT, "review_days": TREND_REVIEW_DAYS},
     GROUP_VOLATILE: VOLATILE_SETTINGS,
     GROUP_CALM: CALM_SETTINGS,
+    GROUP_CUMULATIVE: CUMULATIVE_SETTINGS,
 }
+LIMITS = {GROUP_PEAK: TREND_LIMITS, GROUP_CUMULATIVE: CUMULATIVE_LIMITS, GROUP_VOLATILE: RULE_LIMITS, GROUP_CALM: RULE_LIMITS}
 
 
 def clean_number(raw, low: float, high: float, kind: type):
@@ -38,13 +43,13 @@ def clean_number(raw, low: float, high: float, kind: type):
 
 def clean_setting(group: str, raw: dict) -> dict:
     """Keep only the known fields of a group, inside their limits. Missing ones use the start value."""
-    limits = TREND_LIMITS if group == GROUP_PEAK else RULE_LIMITS
-    start = START_SETTINGS[group]
+    limits, start = LIMITS[group], START_SETTINGS[group]
     return {key: clean_number(raw.get(key, start[key]), *limit) for key, limit in limits.items()}
 
 
-def build_strategy(group: str, setting: dict) -> Rule | TrendRule:
-    return TrendRule(**setting) if group == GROUP_PEAK else Rule(**setting)
+def build_strategy(group: str, setting: dict) -> Rule | TrendRule | CumulativeRule:
+    kinds = {GROUP_PEAK: TrendRule, GROUP_CUMULATIVE: CumulativeRule}
+    return kinds.get(group, Rule)(**setting)
 
 
 @dataclass(frozen=True)
@@ -52,7 +57,7 @@ class Plan:
     groups: dict[str, str]    # ticker -> group
     settings: dict[str, dict]  # group -> setting
 
-    def strategy_for(self, ticker: str) -> Rule | TrendRule | None:
+    def strategy_for(self, ticker: str) -> Rule | TrendRule | CumulativeRule | None:
         group = self.groups.get(ticker)
         return build_strategy(group, self.settings[group]) if group else None
 
