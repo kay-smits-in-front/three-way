@@ -2,6 +2,7 @@
 setting, and the maximum (perfect foresight), per stock and for the portfolio, in euro."""
 
 from functioning.constants import CONTEXT_VETO, TRANSACTION_COST_EUR, WEIGHT_INTUITION, WEIGHT_NEWS
+from functioning.daytrade import daytrade_panel
 from functioning.groups import Plan
 from functioning.imports import dataclass, date, timedelta
 from functioning.market import Holdings
@@ -21,9 +22,9 @@ class Scenario:
     intuition: float | None = None
     plan: Plan | None = None  # when set, every stock in the plan follows the rule of its group
 
-    def strategy(self, ticker: str):
+    def strategy(self, ticker: str, series: Series | None = None):
         """The rule that applies to this stock."""
-        return (self.plan.strategy_for(ticker) if self.plan else None) or self.rule
+        return (self.plan.strategy_for(ticker, series) if self.plan else None) or self.rule
 
     def context(self) -> float:
         parts = [(v, w) for v, w in ((self.news, WEIGHT_NEWS), (self.intuition, WEIGHT_INTUITION)) if v is not None]
@@ -157,7 +158,7 @@ class StockPanel:
 
     def build(self) -> dict:
         s = self.series
-        strategy = self.scenario.strategy(s.ticker)
+        strategy = self.scenario.strategy(s.ticker, s)
         rule = rule_moves(s.closes, strategy, self.scenario.context(), self.first, self.last - 1, self.value0, self.veto)
         best = perfect_moves(s.closes, self.first, self.last, self.value0)
         done = executed_moves(self.trades, s.ticker, s.days, self.first)
@@ -166,6 +167,7 @@ class StockPanel:
             "ticker": s.ticker,
             "group": self.scenario.plan.group_of(s.ticker) if self.scenario.plan else None,
             "strategy": strategy.describe(),
+            "daytrade": daytrade_panel(s, self.first),
             "days": [d.isoformat() for d in s.days[self.first:]],
             "price": [round(c, 4) for c in s.closes[self.first:]],
             **{name: values for name, (values, _) in lines.items()},

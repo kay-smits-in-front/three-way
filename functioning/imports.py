@@ -5,7 +5,7 @@ Project modules are never imported here, to avoid circular imports.
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from enum import StrEnum
 from itertools import product
@@ -19,6 +19,7 @@ __all__ = [
     "StrEnum",
     "argparse",
     "dataclass",
+    "field",
     "date",
     "json",
     "mean",

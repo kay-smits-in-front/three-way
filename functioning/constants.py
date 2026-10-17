@@ -99,8 +99,9 @@ GROUP_PEAK = "peak"          # extreme rise, then a long decline: follow the tre
 GROUP_VOLATILE = "volatile"  # large swings in both directions: contrarian with wide limits
 GROUP_CALM = "calm"          # small moves around a flat or positive average: mostly hold
 GROUP_CUMULATIVE = "cumulative"  # compare with the average of the whole history: sell when dear, buy when cheap
+GROUP_VOLUME = "volume"       # follows volume breakouts
 GROUP_LABELS = {GROUP_PEAK: "Piek en daling", GROUP_VOLATILE: "Volatiel", GROUP_CALM: "Rustig",
-                GROUP_CUMULATIVE: "Cumulatief gemiddelde"}
+                GROUP_CUMULATIVE: "Cumulatief gemiddelde", GROUP_VOLUME: "Volume-uitbraak"}
 DEFAULT_GROUPS = {
     "MRAM": GROUP_PEAK, "HYLN": GROUP_PEAK, "RDW": GROUP_PEAK,
     "BRN.AX": GROUP_VOLATILE, "QBTS": GROUP_VOLATILE, "IONQ": GROUP_VOLATILE,
@@ -117,3 +118,12 @@ VOLATILE_SETTINGS = {"lookback_days": 2, "up_pct": 15.0, "down_pct": 12.0, "stop
 CALM_SETTINGS = {"lookback_days": 3, "up_pct": 10.0, "down_pct": 6.0, "stop_pct": 8.0,
                  "floor_pct": 20.0, "regime_pct": 40.0, "turn_pct": 3.0, "review_days": 2}
 CUMULATIVE_SETTINGS = {"up_pct": 40.0, "down_pct": 25.0, "review_days": 2}  # start guess: sell 40% over, buy back 25% under
+
+# Day-trader view
+DAYTRADE_VOLUME_DAYS = 20     # normal volume = average of this many days before
+DAYTRADE_SPIKE_X = 2.0        # a day with this many times the normal volume is a spike
+DAYTRADE_GAP_PCT = 3.0        # open this far from the previous close is a gap
+DAYTRADE_RANGE_PCT = 8.0      # high minus low of this much of the close is a wide day
+DAYTRADE_ATR_DAYS = 14
+DAYTRADE_RSI_DAYS = 14
+VOLUME_SETTINGS = {"spike_x": 2.0, "min_move_pct": 2.0, "review_days": 1}

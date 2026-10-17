@@ -18,6 +18,9 @@ class Candle:
     day: date
     close: float
     volume: float
+    open: float = 0.0
+    high: float = 0.0
+    low: float = 0.0
 
 
 class Quote:
@@ -41,7 +44,10 @@ class Quote:
         if "Close" not in frame.columns:
             raise ValueError(f"Yahoo Finance returned no Close column for {self.ticker}.")
         candles = [
-            Candle(index.date(), float(row["Close"]), float(row.get("Volume") or 0.0))
+            Candle(
+                index.date(), float(row["Close"]), float(row.get("Volume") or 0.0),
+                float(row.get("Open") or 0.0), float(row.get("High") or 0.0), float(row.get("Low") or 0.0),
+            )
             for index, row in frame.iterrows()
             if float(row["Close"]) > 0
         ]
