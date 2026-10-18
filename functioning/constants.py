@@ -127,3 +127,13 @@ DAYTRADE_RANGE_PCT = 8.0      # high minus low of this much of the close is a wi
 DAYTRADE_ATR_DAYS = 14
 DAYTRADE_RSI_DAYS = 14
 VOLUME_SETTINGS = {"spike_x": 2.0, "min_move_pct": 2.0, "review_days": 1}
+
+# Who is in the stock (Yahoo ownership data)
+PLAYERS_FILE = DATA_DIR / "players.json"
+PLAYERS_MAX_AGE_DAYS = 7      # ownership data changes slowly: refresh once a week
+PLAYERS_TOP_HOLDERS = 3
+PLAYERS_INSIDER_DAYS = 180    # insider buys and sales over this many days
+SHORT_HIGH_PCT = 15.0         # short interest of this share of the float is high
+INSTITUTIONS_HIGH_PCT = 70.0
+CONSENSUS_BUY_MAX = 2.2       # Yahoo recommendation mean: 1 = strong buy ... 5 = strong sell
+CONSENSUS_SELL_MIN = 3.5

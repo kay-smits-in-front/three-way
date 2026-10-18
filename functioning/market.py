@@ -73,6 +73,18 @@ class Quote:
         info = self._yahoo.info
         return {field: info.get(field) for field in INFO_FIELDS}
 
+    def full_info(self) -> dict:
+        """All fields Yahoo has for the stock (ownership, short interest, consensus)."""
+        return dict(self._yahoo.info)
+
+    def institutional_holders(self):
+        """The biggest institutional holders as a DataFrame (may be empty)."""
+        return self._yahoo.institutional_holders
+
+    def insider_transactions(self):
+        """Recent buys and sales by insiders as a DataFrame (may be empty)."""
+        return self._yahoo.insider_transactions
+
     def price_targets(self) -> dict[str, float]:
         """Yahoo price targets: current, low, high, mean, median."""
         return dict(self._yahoo.analyst_price_targets)
