@@ -146,3 +146,8 @@ WHY_CUMULATIVE_PCT = 30.0     # close this far from the average of all closes is
 WHY_RSI_LOW = 30
 WHY_RSI_HIGH = 70
 WHY_SCORE_PCT = 1.0           # news or intuition of this size (-5..+5) counts as a lean
+
+# Rule research (stability of a chosen rule over rolling periods, in the dashboard)
+RESEARCH_WINDOW_DAYS = 42     # trading days per period (about two months)
+RESEARCH_MIN_DAYS = 63        # a stock needs this many days before its first period
+RESEARCH_MAX_WINDOWS = 40
