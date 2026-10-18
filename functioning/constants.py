@@ -137,3 +137,12 @@ SHORT_HIGH_PCT = 15.0         # short interest of this share of the float is hig
 INSTITUTIONS_HIGH_PCT = 70.0
 CONSENSUS_BUY_MAX = 2.2       # Yahoo recommendation mean: 1 = strong buy ... 5 = strong sell
 CONSENSUS_SELL_MIN = 3.5
+
+# Why now, and timing of the signals
+TIMING_REVERSAL_PCT = 15.0    # a turning point is a peak or trough followed by a reversal of this much
+TIMING_WINDOW_DAYS = 10       # a signal within this many trading days of a turning point is a hit
+WHY_TREND_PCT = 3.0           # close this far from its rolling average is a clear trend
+WHY_CUMULATIVE_PCT = 30.0     # close this far from the average of all closes is dear or cheap
+WHY_RSI_LOW = 30
+WHY_RSI_HIGH = 70
+WHY_SCORE_PCT = 1.0           # news or intuition of this size (-5..+5) counts as a lean

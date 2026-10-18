@@ -4,6 +4,8 @@ setting, and the maximum (perfect foresight), per stock and for the portfolio, i
 from functioning.constants import CONTEXT_VETO, TRANSACTION_COST_EUR, WEIGHT_INTUITION, WEIGHT_NEWS
 from functioning.daytrade import daytrade_panel
 from functioning.groups import Plan
+from functioning.timing import timing_stats
+from functioning.whynow import why_now
 from functioning.imports import dataclass, date, timedelta
 from functioning.market import Holdings
 from functioning.prices import PriceCache, Series
@@ -168,6 +170,11 @@ class StockPanel:
             "group": self.scenario.plan.group_of(s.ticker) if self.scenario.plan else None,
             "strategy": strategy.describe(),
             "daytrade": daytrade_panel(s, self.first),
+            "why": why_now(s, strategy, not rule or rule[-1].action != "sell", self.scenario.news, self.scenario.intuition),
+            "timing": timing_stats(
+                s.closes, [m.index for m in rule if m.action == "sell"], [m.index for m in rule if m.action == "buy"],
+                self.first, self.last,
+            ),
             "days": [d.isoformat() for d in s.days[self.first:]],
             "price": [round(c, 4) for c in s.closes[self.first:]],
             **{name: values for name, (values, _) in lines.items()},
